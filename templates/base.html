@@ -24,6 +24,21 @@
     <meta name="keywords" content="asset tracking, hospital, medical equipment">
     <meta name="author" content="Asset Tracker">
     
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="/static/style.css" rel="stylesheet">
@@ -465,72 +480,7 @@
             });
         }
         
-        // PWA Install Prompt
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            showInstallButton();
-        });
-        
-        function showInstallButton() {
-            // Check if button already exists
-            if (document.getElementById('installAppButton')) {
-                return;
-            }
-            
-            const installButton = document.createElement('button');
-            installButton.id = 'installAppButton';
-            installButton.innerHTML = '<i class="fas fa-download"></i> Install App';
-            installButton.className = 'btn btn-primary position-fixed';
-            installButton.style.cssText = 'top: 20px; right: 20px; z-index: 1000; padding: 10px 15px; font-size: 14px;';
-            installButton.onclick = installApp;
-            document.body.appendChild(installButton);
-        }
-        
-        // Show install button after page loads (for manual installation)
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                if (!document.getElementById('installAppButton')) {
-                    showInstallButton();
-                }
-            }, 2000);
-        });
-        
-        function hideInstallButton() {
-            const installButton = document.getElementById('installAppButton');
-            if (installButton) {
-                installButton.remove();
-            }
-        }
-        
-        function installApp() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('User accepted the install prompt');
-                        hideInstallButton(); // Hide button after successful installation
-                    } else {
-                        console.log('User dismissed the install prompt');
-                    }
-                    deferredPrompt = null;
-                });
-            }
-        }
-        
-        // Hide install button if app is already installed
-        window.addEventListener('appinstalled', (evt) => {
-            console.log('App was installed');
-            hideInstallButton();
-        });
-        
-        // Check if app is already installed (for standalone mode)
-        if (window.matchMedia('(display-mode: standalone)').matches || 
-            window.navigator.standalone === true) {
-            console.log('App is already installed');
-            hideInstallButton();
-        }
+
     </script>
     
     <!-- Mobile Menu JavaScript -->

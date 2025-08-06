@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block auth_content %}
+<div class="container-fluid">
+    <div class="row min-vh-100">
+        <div class="col-md-6 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="text-center text-white">
+                <h1 class="display-4 mb-4"><i class="fas fa-hospital"></i></h1>
+                <h2 class="mb-4">Asset Usage & Rental Tracking</h2>
+                <p class="lead mb-4">Comprehensive end-to-end workflow for hospital asset management</p>
+                <div class="row text-start">
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-check-circle me-2"></i>QR Code Scanning</h5>
+                        <h5><i class="fas fa-check-circle me-2"></i>Real-time Tracking</h5>
+                        <h5><i class="fas fa-check-circle me-2"></i>AI Knowledge Layer</h5>
+                    </div>
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-check-circle me-2"></i>Rental Management</h5>
+                        <h5><i class="fas fa-check-circle me-2"></i>Analytics & Reports</h5>
+                        <h5><i class="fas fa-check-circle me-2"></i>Alert System</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 d-flex align-items-center justify-content-center">
+            <div class="card shadow-lg" style="max-width: 400px;">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <h3 class="card-title">Welcome Back</h3>
+                        <p class="text-muted">Sign in to access the asset tracking system</p>
+                    </div>
+                    <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login
+                    </a>
+                    <div class="text-center mt-3">
+                        <small class="text-muted">Demo Credentials: admin / admin123</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

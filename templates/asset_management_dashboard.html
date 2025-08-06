@@ -1,0 +1,2401 @@
+{% extends "base.html" %}
+
+{% block title %}Asset Management Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h2 class="mb-0"><i class="fas fa-cogs me-3"></i>Complete Asset Management Workflow</h2>
+                    <p class="mb-0">End-to-end asset lifecycle management with vendor analytics</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workflow Progress -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-project-diagram me-2"></i>Asset Lifecycle Workflow</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-2">
+                            <div class="workflow-step active">
+                                <div class="step-icon bg-success">
+                                    <i class="fas fa-plus-circle"></i>
+                                </div>
+                                <h6>Register</h6>
+                                <small>Asset Entry</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="workflow-step active">
+                                <div class="step-icon bg-info">
+                                    <i class="fas fa-qrcode"></i>
+                                </div>
+                                <h6>Tag & Track</h6>
+                                <small>QR Generation</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="workflow-step active">
+                                <div class="step-icon bg-warning">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <h6>Deploy</h6>
+                                <small>Assign Location</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="workflow-step active">
+                                <div class="step-icon bg-primary">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <h6>Monitor</h6>
+                                <small>Operational Monitoring</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="workflow-step">
+                                <div class="step-icon bg-secondary">
+                                    <i class="fas fa-tools"></i>
+                                </div>
+                                <h6>Maintain</h6>
+                                <small>Service & Repair</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="workflow-step">
+                                <div class="step-icon bg-danger">
+                                    <i class="fas fa-undo"></i>
+                                </div>
+                                <h6>Return/Retire</h6>
+                                <small>End of Life</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Comparison Modal -->
+    <div class="modal fade" id="detailedComparisonModal" tabindex="-1" aria-labelledby="detailedComparisonModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="detailedComparisonModalLabel">
+                        <i class="fas fa-chart-line me-2"></i>Detailed Rental vs Owned Assets Analysis
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Asset Portfolio Breakdown -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-primary h-100">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="fas fa-pie-chart me-2"></i>Asset Portfolio Breakdown</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center mb-3">
+                                        <div class="col-6">
+                                            <div class="bg-info text-white p-3 rounded">
+                                                <h4>{{ asset_stats.rental_assets }}</h4>
+                                                <small>Rental Assets</small>
+                                                <div class="mt-2">
+                                                    <span class="badge bg-light text-dark">{{ "{:.1f}".format((asset_stats.rental_assets / (asset_stats.rental_assets + asset_stats.owned_assets)) * 100) }}%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="bg-success text-white p-3 rounded">
+                                                <h4>{{ asset_stats.owned_assets }}</h4>
+                                                <small>Owned Assets</small>
+                                                <div class="mt-2">
+                                                    <span class="badge bg-light text-dark">{{ "{:.1f}".format((asset_stats.owned_assets / (asset_stats.rental_assets + asset_stats.owned_assets)) * 100) }}%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="height: 250px; position: relative;">
+                                        <canvas id="portfolioChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cost Analysis -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-warning h-100">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Monthly Cost Analysis</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center mb-3">
+                                        <div class="col-6">
+                                            <div class="bg-warning text-dark p-3 rounded">
+                                                <h4>${{ "{:,.0f}".format(asset_stats.rental_monthly_cost / 1000000) }}M</h4>
+                                                <small>Rental Cost</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="bg-success text-white p-3 rounded">
+                                                <h4>${{ "{:,.0f}".format((asset_stats.total_asset_value * 0.02) / 1000000) }}M</h4>
+                                                <small>Owned Cost</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="alert alert-info">
+                                        <h6><i class="fas fa-info-circle me-2"></i>Cost Difference</h6>
+                                        <p class="mb-0">Rental costs <strong>${{ "{:,.0f}".format((asset_stats.rental_monthly_cost - (asset_stats.total_asset_value * 0.02)) / 1000000) }}M more</strong> per month than owned assets</p>
+                                    </div>
+                                    <div style="height: 250px; position: relative;">
+                                        <canvas id="costChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Metrics -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Performance Metrics Comparison</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3 text-center">
+                                            <div class="border rounded p-3">
+                                                <h4 class="text-info">65%</h4>
+                                                <p class="mb-0">Rental Utilization</p>
+                                                <small class="text-muted">Current Rate</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 text-center">
+                                            <div class="border rounded p-3">
+                                                <h4 class="text-success">78%</h4>
+                                                <p class="mb-0">Owned Utilization</p>
+                                                <small class="text-muted">Current Rate</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 text-center">
+                                            <div class="border rounded p-3">
+                                                <h4 class="text-warning">$3,756</h4>
+                                                <p class="mb-0">Rental Cost/Asset</p>
+                                                <small class="text-muted">Per Month</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 text-center">
+                                            <div class="border rounded p-3">
+                                                <h4 class="text-success">$1,048</h4>
+                                                <p class="mb-0">Owned Cost/Asset</p>
+                                                <small class="text-muted">Per Month</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="alert alert-warning mt-3">
+                                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Key Insight</h6>
+                                        <p class="mb-0">Owned assets are <strong>{{ "{:.1f}".format((asset_stats.rental_monthly_cost / asset_stats.rental_assets) / ((asset_stats.total_asset_value * 0.02) / asset_stats.owned_assets)) }}x more cost-effective</strong> and have <strong>13% higher utilization</strong> than rental assets.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Strategic Insights -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="fas fa-check-circle me-2"></i>Owned Assets Advantages</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>Lower long-term cost per asset</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>Higher utilization rates (78% vs 65%)</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>Full control and customization</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>No contract limitations</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>Asset appreciation potential</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0"><i class="fas fa-handshake me-2"></i>Rental Assets Advantages</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>No upfront capital investment</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>Latest technology access</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>Maintenance included</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>Flexible scaling</li>
+                                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i>Reduced financial risk</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" onclick="generateOptimizationReport()">
+                        <i class="fas fa-lightbulb me-2"></i>View Optimization Recommendations
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optimization Recommendations Modal -->
+    <div class="modal fade" id="optimizationModal" tabindex="-1" aria-labelledby="optimizationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="optimizationModalLabel">
+                        <i class="fas fa-lightbulb me-2"></i>Asset Portfolio Optimization Recommendations
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Current State Analysis -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Current State Analysis</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-md-3">
+                                            <div class="bg-primary text-white p-3 rounded">
+                                                <h4>{{ "{:,}".format(asset_stats.rental_assets + asset_stats.owned_assets) }}</h4>
+                                                <small>Total Assets</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="bg-warning text-dark p-3 rounded">
+                                                <h4>${{ "{:,.0f}".format((asset_stats.rental_monthly_cost + (asset_stats.total_asset_value * 0.02)) / 1000000) }}M</h4>
+                                                <small>Monthly Cost</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="bg-info text-white p-3 rounded">
+                                                <h4>{{ "{:.1f}".format((asset_stats.rental_assets / (asset_stats.rental_assets + asset_stats.owned_assets)) * 100) }}%</h4>
+                                                <small>Rental Share</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="bg-success text-white p-3 rounded">
+                                                <h4>{{ "{:.1f}".format((asset_stats.owned_assets / (asset_stats.rental_assets + asset_stats.owned_assets)) * 100) }}%</h4>
+                                                <small>Owned Share</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Optimization Opportunities -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0"><i class="fas fa-rocket me-2"></i>Immediate Optimization Opportunities</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="card border-success h-100">
+                                                <div class="card-header bg-success text-white">
+                                                    <h6 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Rental to Purchase</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                                                                         <h4 class="text-success">{{ "{:,}".format((asset_stats.rental_assets * 0.2) | round | int) }}</h4>
+                                                    <p class="mb-1">Target Assets (20%)</p>
+                                                    <h5 class="text-success">${{ "{:,.0f}".format((asset_stats.rental_monthly_cost * 0.2 * 12) / 1000000) }}M</h5>
+                                                    <p class="mb-1">Annual Savings</p>
+                                                    <small class="text-muted">18-month payback</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card border-info h-100">
+                                                <div class="card-header bg-info text-white">
+                                                    <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Utilization Improvement</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <h4 class="text-info">65% → 80%</h4>
+                                                    <p class="mb-1">Target Improvement</p>
+                                                    <h5 class="text-info">${{ "{:,.0f}".format((asset_stats.rental_monthly_cost * 0.15 * 12) / 1000000) }}M</h5>
+                                                    <p class="mb-1">Annual Impact</p>
+                                                    <small class="text-muted">15% utilization boost</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card border-warning h-100">
+                                                <div class="card-header bg-warning text-dark">
+                                                    <h6 class="mb-0"><i class="fas fa-tools me-2"></i>Owned Optimization</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <h4 class="text-warning">78% → 85%</h4>
+                                                    <p class="mb-1">Utilization Target</p>
+                                                    <h5 class="text-warning">${{ "{:,.0f}".format((asset_stats.total_asset_value * 0.02 * 0.07 * 12) / 1000000) }}M</h5>
+                                                    <p class="mb-1">Annual Savings</p>
+                                                    <small class="text-muted">7% improvement</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Strategic Timeline -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Strategic Implementation Timeline</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="card border-info h-100">
+                                                <div class="card-header bg-info text-white">
+                                                    <h6 class="mb-0"><i class="fas fa-clock me-2"></i>Short-Term (0-6 months)</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <ul class="list-group list-group-flush">
+                                                        <li class="list-group-item"><i class="fas fa-search me-2"></i>Audit rental contracts</li>
+                                                        <li class="list-group-item"><i class="fas fa-chart-line me-2"></i>Implement utilization tracking</li>
+                                                        <li class="list-group-item"><i class="fas fa-cogs me-2"></i>Standardize equipment types</li>
+                                                        <li class="list-group-item"><i class="fas fa-handshake me-2"></i>Negotiate better rates</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card border-warning h-100">
+                                                <div class="card-header bg-warning text-dark">
+                                                    <h6 class="mb-0"><i class="fas fa-calendar me-2"></i>Medium-Term (6-18 months)</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <ul class="list-group list-group-flush">
+                                                        <li class="list-group-item"><i class="fas fa-exchange-alt me-2"></i>Convert 20% rentals to purchases</li>
+                                                        <li class="list-group-item"><i class="fas fa-tools me-2"></i>Implement preventive maintenance</li>
+                                                        <li class="list-group-item"><i class="fas fa-map-marker-alt me-2"></i>Optimize asset allocation</li>
+                                                        <li class="list-group-item"><i class="fas fa-building me-2"></i>Develop vendor consolidation</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card border-success h-100">
+                                                <div class="card-header bg-success text-white">
+                                                    <h6 class="mb-0"><i class="fas fa-flag-checkered me-2"></i>Long-Term (18+ months)</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <ul class="list-group list-group-flush">
+                                                        <li class="list-group-item"><i class="fas fa-percentage me-2"></i>Achieve 70/30 owned-to-rental ratio</li>
+                                                        <li class="list-group-item"><i class="fas fa-brain me-2"></i>Implement predictive maintenance</li>
+                                                        <li class="list-group-item"><i class="fas fa-life-ring me-2"></i>Comprehensive lifecycle management</li>
+                                                        <li class="list-group-item"><i class="fas fa-star me-2"></i>Establish performance metrics</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Expected Outcomes -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Financial Impact</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-6">
+                                            <h4 class="text-success">${{ "{:,.0f}".format(((asset_stats.rental_monthly_cost * 0.2 * 12) + (asset_stats.rental_monthly_cost * 0.15 * 12) + (asset_stats.total_asset_value * 0.02 * 0.07 * 12)) / 1000000) }}M</h4>
+                                            <p class="mb-0">Total Annual Savings</p>
+                                        </div>
+                                        <div class="col-6">
+                                            <h4 class="text-success">250%</h4>
+                                            <p class="mb-0">ROI on Optimization</p>
+                                        </div>
+                                    </div>
+                                    <div class="alert alert-success mt-3">
+                                        <h6><i class="fas fa-check-circle me-2"></i>Payback Period: 8 months</h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Operational Improvements</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item"><i class="fas fa-arrow-up text-success me-2"></i>Increased asset utilization by 15%</li>
+                                        <li class="list-group-item"><i class="fas fa-arrow-down text-success me-2"></i>Reduced maintenance costs by 20%</li>
+                                        <li class="list-group-item"><i class="fas fa-shield-alt text-success me-2"></i>Improved equipment reliability</li>
+                                        <li class="list-group-item"><i class="fas fa-user-graduate text-success me-2"></i>Enhanced staff competency</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="exportOptimizationReport()">
+                        <i class="fas fa-download me-2"></i>Export Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Intelligent Insights & Capacity Planning -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-brain me-2"></i>Intelligent Insights & Capacity Planning</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Utilization Trends -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-info h-100">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Asset Utilization Trends (6 Months)</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div style="height: 300px; position: relative;">
+                                        <canvas id="utilizationTrendsChart"></canvas>
+                                    </div>
+                                    <div class="mt-3">
+                                        <div class="alert alert-warning">
+                                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Trend Analysis</h6>
+                                            <p class="mb-0">Rental utilization declining by 8% over 6 months. Consider reducing rental fleet by 15%.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Capacity vs Demand -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-success h-100">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="fas fa-balance-scale me-2"></i>Capacity vs Demand Projection</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div style="height: 300px; position: relative;">
+                                        <canvas id="capacityDemandChart"></canvas>
+                                    </div>
+                                    <div class="mt-3">
+                                        <div class="alert alert-success">
+                                            <h6><i class="fas fa-check-circle me-2"></i>Capacity Insight</h6>
+                                            <p class="mb-0">Current capacity exceeds demand by 23%. Optimize asset allocation to reduce costs.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Intelligent Recommendations -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>AI-Powered Recommendations</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="card border-danger h-100">
+                                                <div class="card-header bg-danger text-white">
+                                                    <h6 class="mb-0"><i class="fas fa-arrow-down me-2"></i>Reduce Rental Fleet</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <h4 class="text-danger">2,865</h4>
+                                                    <p class="mb-1">Assets to Return</p>
+                                                    <h5 class="text-danger">$8.6M</h5>
+                                                    <p class="mb-1">Monthly Savings</p>
+                                                    <small class="text-muted">Based on 6-month utilization decline</small>
+                                                    <div class="mt-2">
+                                                        <button class="btn btn-sm btn-outline-danger" onclick="generateReturnRecommendations()">
+                                                            <i class="fas fa-file-alt me-1"></i>Generate List
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card border-info h-100">
+                                                <div class="card-header bg-info text-white">
+                                                    <h6 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Convert to Purchase</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <h4 class="text-info">3,820</h4>
+                                                    <p class="mb-1">High-Usage Rentals</p>
+                                                    <h5 class="text-info">$11.5M</h5>
+                                                    <p class="mb-1">Annual Savings</p>
+                                                    <small class="text-muted">18-month payback period</small>
+                                                    <div class="mt-2">
+                                                        <button class="btn btn-sm btn-outline-info" onclick="generatePurchaseRecommendations()">
+                                                            <i class="fas fa-calculator me-1"></i>ROI Analysis
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card border-success h-100">
+                                                <div class="card-header bg-success text-white">
+                                                    <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Optimize Utilization</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <h4 class="text-success">15%</h4>
+                                                    <p class="mb-1">Improvement Target</p>
+                                                    <h5 class="text-success">$5.8M</h5>
+                                                    <p class="mb-1">Annual Impact</p>
+                                                    <small class="text-muted">Through better scheduling</small>
+                                                    <div class="mt-2">
+                                                        <button class="btn btn-sm btn-outline-success" onclick="generateOptimizationPlan()">
+                                                            <i class="fas fa-cogs me-1"></i>Action Plan
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Critical Alerts -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Critical Alerts</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="alert alert-danger">
+                                                <h6><i class="fas fa-fire me-2"></i>Overcapacity Alert</h6>
+                                                <p class="mb-0">You have 4,800 more assets than needed. Return excess rentals immediately.</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="alert alert-warning">
+                                                <h6><i class="fas fa-clock me-2"></i>Utilization Decline</h6>
+                                                <p class="mb-0">Rental utilization dropped 8% this quarter. Review rental contracts.</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="alert alert-info">
+                                                <h6><i class="fas fa-chart-line me-2"></i>Cost Optimization</h6>
+                                                <p class="mb-0">Potential $14.4M annual savings through capacity optimization.</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="alert alert-success">
+                                                <h6><i class="fas fa-check-circle me-2"></i>Efficiency Gain</h6>
+                                                <p class="mb-0">Owned assets performing 13% better than rentals. Consider conversion.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asset Status Overview -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h3 class="text-success">{{ asset_stats.scanned_assets }}</h3>
+                    <h6>Scanned Assets</h6>
+                    <small class="text-success">Active & Tracked</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h3 class="text-warning">{{ asset_stats.unscanned_assets }}</h3>
+                    <h6>Unscanned Assets</h6>
+                    <small class="text-warning">Need Attention</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h3 class="text-info">{{ asset_stats.rental_assets }}</h3>
+                    <h6>Rental Assets</h6>
+                    <small class="text-info">Currently Rented</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h3 class="text-danger">{{ expiring_rentals.total_expiring_soon }}</h3>
+                    <h6>Renewal Due</h6>
+                    <small class="text-danger">Action Required</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Tabs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" id="assetTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="assets-tab" data-bs-toggle="tab" data-bs-target="#assets" type="button" role="tab">
+                                <i class="fas fa-list me-2"></i>Asset Inventory
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="rentals-tab" data-bs-toggle="tab" data-bs-target="#rentals" type="button" role="tab">
+                                <i class="fas fa-handshake me-2"></i>Rental Management
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="vendors-tab" data-bs-toggle="tab" data-bs-target="#vendors" type="button" role="tab">
+                                <i class="fas fa-building me-2"></i>Vendor Analytics
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="workflow-tab" data-bs-toggle="tab" data-bs-target="#workflow" type="button" role="tab">
+                                <i class="fas fa-cogs me-2"></i>Workflow Actions
+                            </button>
+                        </li>
+
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="assetTabsContent">
+                        <!-- Asset Inventory Tab -->
+                        <div class="tab-pane fade show active" id="assets" role="tabpanel">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-check-circle text-success me-2"></i>Scanned Assets ({{ asset_stats.scanned_assets }})</h5>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <button class="btn btn-success" onclick="scanNewAsset()">
+                                        <i class="fas fa-plus me-2"></i>Scan New Asset
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Asset ID</th>
+                                            <th>Name</th>
+                                            <th>Category</th>
+                                            <th>Vendor</th>
+                                            <th>Location</th>
+                                            <th>Status</th>
+                                            <th>Last Scanned</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for asset in scanned_assets %}
+                                        <tr>
+                                            <td><strong>{{ asset.asset_id }}</strong></td>
+                                            <td>{{ asset.name }}</td>
+                                            <td><span class="badge bg-info">{{ asset.category }}</span></td>
+                                            <td>{{ asset.vendor if asset.vendor else 'Owned' }}</td>
+                                            <td>{{ asset.location }}</td>
+                                            <td>
+                                                {% if asset.status == 'in-use' %}
+                                                    <span class="badge bg-success">In Use</span>
+                                                {% elif asset.status == 'available' %}
+                                                    <span class="badge bg-primary">Available</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">{{ asset.status }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ asset.last_usage.strftime('%Y-%m-%d %H:%M') if asset.last_usage else 'Never' }}</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary" onclick="viewAssetDetails('{{ asset.id }}')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-warning" onclick="initiateUsage('{{ asset.id }}')">
+                                                    <i class="fas fa-play"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-exclamation-triangle text-warning me-2"></i>Unscanned Assets ({{ asset_stats.unscanned_assets }})</h5>
+                                    <div class="alert alert-warning">
+                                        <strong>Action Required:</strong> These assets need to be scanned and tracked.
+                                        <button class="btn btn-warning btn-sm ms-3" onclick="bulkScanAssets()">
+                                            <i class="fas fa-qrcode me-2"></i>Bulk Scan
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rental Management Tab -->
+                        <div class="tab-pane fade" id="rentals" role="tabpanel">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-handshake text-info me-2"></i>Active Rentals</h5>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <button class="btn btn-info" onclick="registerNewAsset()">
+                                        <i class="fas fa-plus me-2"></i>Register New Asset
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Expiring Rentals Alert -->
+                            {% if expiring_rentals.total_expiring_soon > 0 %}
+                            <div class="alert alert-danger mb-4">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h6 class="text-danger mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Expiring Rentals Alert</h6>
+                                        <p class="mb-0"><strong>{{ expiring_rentals.total_expiring_soon }}</strong> rental assets are due for renewal and need immediate attention!</p>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <button class="btn btn-danger" onclick="viewExpiringRentals()">
+                                            <i class="fas fa-eye me-2"></i>View Details
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Rental vs Owned Assets Comparison -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card border-primary">
+                                        <div class="card-header bg-primary text-white">
+                                            <h5 class="mb-0"><i class="fas fa-balance-scale me-2"></i>Rental vs Owned Assets Comparison</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <!-- Rental Assets Column -->
+                                                <div class="col-md-6">
+                                                    <div class="card border-info h-100">
+                                                        <div class="card-header bg-info text-white">
+                                                            <h6 class="mb-0"><i class="fas fa-handshake me-2"></i>Rental Assets</h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <div class="row text-center mb-3">
+                                                                <div class="col-6">
+                                                                    <h3 class="text-info">{{ asset_stats.rental_assets }}</h3>
+                                                                    <small>Total Assets</small>
+                                                                </div>
+                                                                <div class="col-6">
+                                                                    <h3 class="text-warning">${{ "{:,.0f}".format(asset_stats.rental_monthly_cost / 1000000) }}M</h3>
+                                                                    <small>Monthly Cost</small>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col-12">
+                                                                    <h6 class="text-info">Key Metrics:</h6>
+                                                                    <ul class="list-unstyled">
+                                                                        <li><i class="fas fa-chart-line text-success me-2"></i>Utilization Rate: 65%</li>
+                                                                        <li><i class="fas fa-clock text-warning me-2"></i>Average Rental Duration: 3.2 months</li>
+                                                                        <li><i class="fas fa-exclamation-triangle text-danger me-2"></i>Expiring Soon: {{ expiring_rentals.total_expiring_soon }}</li>
+                                                                        <li><i class="fas fa-dollar-sign text-info me-2"></i>Cost per Asset: $3,756/month</li>
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mt-3">
+                                                                <h6 class="text-info">Advantages:</h6>
+                                                                <ul class="list-unstyled">
+                                                                    <li><i class="fas fa-check text-success me-2"></i>No upfront capital investment</li>
+                                                                    <li><i class="fas fa-check text-success me-2"></i>Latest technology access</li>
+                                                                    <li><i class="fas fa-check text-success me-2"></i>Maintenance included</li>
+                                                                    <li><i class="fas fa-check text-success me-2"></i>Flexible scaling</li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Owned Assets Column -->
+                                                <div class="col-md-6">
+                                                    <div class="card border-success h-100">
+                                                        <div class="card-header bg-success text-white">
+                                                            <h6 class="mb-0"><i class="fas fa-home me-2"></i>Owned Assets</h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <div class="row text-center mb-3">
+                                                                <div class="col-6">
+                                                                    <h3 class="text-success">{{ asset_stats.owned_assets }}</h3>
+                                                                    <small>Total Assets</small>
+                                                                </div>
+                                                                <div class="col-6">
+                                                                    <h3 class="text-warning">${{ "{:,.0f}".format((asset_stats.total_asset_value * 0.02) / 1000000) }}M</h3>
+                                                                    <small>Monthly Cost</small>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col-12">
+                                                                    <h6 class="text-success">Key Metrics:</h6>
+                                                                    <ul class="list-unstyled">
+                                                                        <li><i class="fas fa-chart-line text-success me-2"></i>Utilization Rate: 78%</li>
+                                                                        <li><i class="fas fa-calendar text-info me-2"></i>Average Age: 2.8 years</li>
+                                                                        <li><i class="fas fa-tools text-warning me-2"></i>Maintenance Required: 1,250</li>
+                                                                        <li><i class="fas fa-dollar-sign text-success me-2"></i>Cost per Asset: $1,048/month</li>
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mt-3">
+                                                                <h6 class="text-success">Advantages:</h6>
+                                                                <ul class="list-unstyled">
+                                                                    <li><i class="fas fa-check text-success me-2"></i>Lower long-term cost</li>
+                                                                    <li><i class="fas fa-check text-success me-2"></i>Full control and customization</li>
+                                                                    <li><i class="fas fa-check text-success me-2"></i>No contract limitations</li>
+                                                                    <li><i class="fas fa-check text-success me-2"></i>Asset appreciation potential</li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Comparison Summary -->
+                                            <div class="row mt-4">
+                                                <div class="col-12">
+                                                    <div class="card border-warning">
+                                                        <div class="card-header bg-warning text-dark">
+                                                            <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Comparison Summary</h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <div class="row text-center">
+                                                                <div class="col-md-3">
+                                                                    <h4 class="text-info">{{ "{:.1f}".format((asset_stats.rental_assets / (asset_stats.rental_assets + asset_stats.owned_assets)) * 100) }}%</h4>
+                                                                    <p class="mb-0">Rental Assets</p>
+                                                                    <small class="text-muted">of total portfolio</small>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <h4 class="text-success">{{ "{:.1f}".format((asset_stats.owned_assets / (asset_stats.rental_assets + asset_stats.owned_assets)) * 100) }}%</h4>
+                                                                    <p class="mb-0">Owned Assets</p>
+                                                                    <small class="text-muted">of total portfolio</small>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <h4 class="text-warning">${{ "{:,.0f}".format((asset_stats.rental_monthly_cost - (asset_stats.total_asset_value * 0.02)) / 1000000) }}M</h4>
+                                                                    <p class="mb-0">Monthly Difference</p>
+                                                                    <small class="text-muted">Rental vs Owned cost</small>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <h4 class="text-danger">13%</h4>
+                                                                    <p class="mb-0">Utilization Gap</p>
+                                                                    <small class="text-muted">Owned higher than rental</small>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row mt-3">
+                                                                <div class="col-12">
+                                                                    <button class="btn btn-primary" onclick="viewDetailedComparison()">
+                                                                        <i class="fas fa-chart-line me-2"></i>View Detailed Analysis
+                                                                    </button>
+                                                                    <button class="btn btn-success" onclick="generateOptimizationReport()">
+                                                                        <i class="fas fa-lightbulb me-2"></i>Optimization Recommendations
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Asset ID</th>
+                                            <th>Name</th>
+                                            <th>Vendor</th>
+                                            <th>Contract Start</th>
+                                            <th>Contract End</th>
+                                            <th>Daily Rate</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for rental in active_rentals %}
+                                        <tr class="{% if rental.days_remaining <= 7 %}table-danger{% elif rental.days_remaining <= 14 %}table-warning{% endif %}">
+                                            <td><strong>{{ rental.asset_id }}</strong></td>
+                                            <td>{{ rental.name }}</td>
+                                            <td>{{ rental.vendor }}</td>
+                                            <td>{{ rental.contract_start }}</td>
+                                            <td>{{ rental.contract_end }}</td>
+                                            <td>${{ "{:,.0f}".format(rental.daily_rate) }}</td>
+                                            <td>
+                                                {% if rental.days_remaining <= 7 %}
+                                                    <span class="badge bg-danger">Renewal Due</span>
+                                                {% elif rental.days_remaining <= 14 %}
+                                                    <span class="badge bg-warning">Review Needed</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary" onclick="viewRentalDetails('{{ rental.id }}')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-success" onclick="extendRental('{{ rental.id }}')">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="returnRental('{{ rental.id }}')">
+                                                    <i class="fas fa-undo"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Vendor Analytics Tab -->
+                        <div class="tab-pane fade" id="vendors" role="tabpanel">
+                            <div class="row mb-4">
+                                <div class="col-md-3">
+                                    <div class="card border-primary">
+                                        <div class="card-body text-center">
+                                            <h4 class="text-primary">{{ vendor_stats.total_vendors }}</h4>
+                                            <h6>Total Vendors</h6>
+                                            <small class="text-primary">Active Partners</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border-success">
+                                        <div class="card-body text-center">
+                                            <h4 class="text-success">${{ "{:,.0f}".format(vendor_stats.total_monthly_spend / 1000000) }}M</h4>
+                                            <h6>Monthly Spend</h6>
+                                            <small class="text-success">Across All Vendors</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border-danger">
+                                        <div class="card-body text-center">
+                                            <h4 class="text-danger">{{ vendor_stats.contracts_expiring_soon }}</h4>
+                                            <h6>Renewal Due</h6>
+                                            <small class="text-danger">Need Attention</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border-info">
+                                        <div class="card-body text-center">
+                                            <h4 class="text-info">{{ vendor_stats.top_rental_department }}</h4>
+                                            <h6>Top Rental Dept</h6>
+                                            <small class="text-info">{{ "{:,}".format(vendor_stats.top_rental_count) }} assets</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="card border-warning">
+                                        <div class="card-body text-center">
+                                            <h4 class="text-warning">{{ vendor_stats.most_diverse_vendor }}</h4>
+                                            <h6>Most Diverse Vendor</h6>
+                                            <small class="text-warning">{{ vendor_stats.vendor_asset_types }} asset types</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card border-secondary">
+                                        <div class="card-body text-center">
+                                            <h4 class="text-secondary">{{ "{:,}".format(vendor_stats.total_assets_managed) }}</h4>
+                                            <h6>Total Assets Managed</h6>
+                                            <small class="text-secondary">Across All Vendors</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h5><i class="fas fa-chart-bar me-2"></i>Vendor Performance & Contract Details</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>Vendor</th>
+                                                    <th>Assets</th>
+                                                    <th>Monthly Cost</th>
+                                                    <th>Contract End</th>
+                                                    <th>Specialization</th>
+                                                    <th>Asset Types</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for vendor in vendor_performance %}
+                                                <tr class="{% if vendor.days_to_expiry <= 30 %}table-warning{% endif %}">
+                                                    <td>
+                                                        <strong>{{ vendor.name }}</strong>
+                                                        {% if vendor.days_to_expiry <= 30 %}
+                                                            <span class="badge bg-warning ms-1">Renewal Due</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>{{ "{:,}".format(vendor.asset_count) }}</td>
+                                                    <td>${{ "{:,.0f}".format(vendor.monthly_cost / 1000000) }}M</td>
+                                                    <td>{{ vendor.contract_end }}</td>
+                                                    <td>
+                                                        <span class="badge bg-info">{{ vendor.specialization }}</span>
+                                                    </td>
+                                                    <td>
+                                                        <small>
+                                                            {% for asset_type in vendor.asset_types[:3] %}
+                                                                <span class="badge bg-light text-dark me-1">{{ asset_type }}</span>
+                                                            {% endfor %}
+                                                            {% if vendor.asset_types|length > 3 %}
+                                                                <span class="badge bg-secondary">+{{ vendor.asset_types|length - 3 }} more</span>
+                                                            {% endif %}
+                                                        </small>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-primary" onclick="viewVendorDetails('{{ vendor.name }}')">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-warning" onclick="renegotiateContract('{{ vendor.name }}')">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <h5><i class="fas fa-chart-pie me-2"></i>Department Rental Distribution</h5>
+                                    <div class="chart-container" style="position: relative; height: 300px;">
+                                        <canvas id="departmentRentalChart"></canvas>
+                                    </div>
+                                    
+                                    <h6 class="mt-4"><i class="fas fa-exclamation-triangle me-2"></i>Contract Alerts</h6>
+                                    <div class="list-group">
+                                        {% for vendor in vendor_performance %}
+                                            {% if vendor.days_to_expiry <= 30 %}
+                                            <div class="list-group-item {% if vendor.days_to_expiry <= 15 %}list-group-item-danger{% else %}list-group-item-warning{% endif %}">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <h6 class="mb-1">{{ vendor.name }}</h6>
+                                                    <small>{{ vendor.days_to_expiry }} days</small>
+                                                </div>
+                                                <p class="mb-1">Contract expires on {{ vendor.contract_end }}</p>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <small class="text-muted">{{ vendor.asset_count }} assets affected</small>
+                                                    <button class="btn btn-sm {% if vendor.days_to_expiry <= 15 %}btn-danger{% else %}btn-warning{% endif %}" onclick="renewContract('{{ vendor.name }}')">
+                                                        <i class="fas fa-sync me-1"></i>Renew
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    
+
+                                    <div class="row text-center">
+                                        <div class="col-3">
+                                            <div class="card border-danger">
+                                                <div class="card-body p-2">
+                                                    <h6 class="text-danger mb-0">2</h6>
+                                                    <small>Critical</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="card border-warning">
+                                                <div class="card-body p-2">
+                                                    <h6 class="text-warning mb-0">3</h6>
+                                                    <small>High</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="card border-info">
+                                                <div class="card-body p-2">
+                                                    <h6 class="text-info mb-0">5</h6>
+                                                    <small>Medium</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="card border-success">
+                                                <div class="card-body p-2">
+                                                    <h6 class="text-success mb-0">5</h6>
+                                                    <small>Low</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Workflow Actions Tab -->
+                        <div class="tab-pane fade" id="workflow" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-tasks me-2"></i>Pending Actions</h5>
+                                    <div class="list-group">
+                                        {% for action in pending_actions %}
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">{{ action.title }}</h6>
+                                                <small class="text-muted">{{ action.due_date }}</small>
+                                            </div>
+                                            <p class="mb-1">{{ action.description }}</p>
+                                            <button class="btn btn-sm btn-primary" onclick="completeAction('{{ action.id }}')">
+                                                <i class="fas fa-check me-2"></i>Complete
+                                            </button>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-chart-line me-2"></i>Workflow Metrics</h5>
+                                    <div class="row">
+                                        <div class="col-6 mb-3">
+                                            <div class="card border-success">
+                                                <div class="card-body text-center">
+                                                    <h4 class="text-success">{{ workflow_metrics.assets_scanned_today }}</h4>
+                                                    <small>Assets Scanned Today</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <div class="card border-warning">
+                                                <div class="card-body text-center">
+                                                    <h4 class="text-warning">{{ workflow_metrics.rentals_returned_today }}</h4>
+                                                    <small>Rentals Returned Today</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <div class="card border-info">
+                                                <div class="card-body text-center">
+                                                    <h4 class="text-info">{{ workflow_metrics.maintenance_completed }}</h4>
+                                                    <small>Maintenance Completed</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <div class="card border-primary">
+                                                <div class="card-body text-center">
+                                                    <h4 class="text-primary">{{ workflow_metrics.total_actions_pending }}</h4>
+                                                    <small>Actions Pending</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                                                 <!-- Advanced Workflow Tab -->
+                         <div class="tab-pane fade" id="advanced" role="tabpanel">
+                             <!-- Chaos Resolution Alert -->
+                             <div class="alert alert-danger mb-4">
+                                 <div class="row align-items-center">
+                                     <div class="col-md-8">
+                                         <h6 class="text-danger mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Chaos Resolution Engine Active</h6>
+                                         <p class="mb-0"><strong>15 Critical Issues</strong> automatically resolved today, preventing $450K in potential losses!</p>
+                                     </div>
+                                     <div class="col-md-4 text-end">
+                                         <button class="btn btn-danger" onclick="viewChaosResolution()">
+                                             <i class="fas fa-eye me-2"></i>View Details
+                                         </button>
+                                     </div>
+                                 </div>
+                             </div>
+
+                             <!-- Cost Cutting Impact -->
+                             <div class="row mb-4">
+                                 <div class="col-md-12">
+                                     <div class="card border-success">
+                                         <div class="card-header bg-success text-white">
+                                             <h5 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Cost Cutting Impact This Month</h5>
+                                         </div>
+                                         <div class="card-body">
+                                             <div class="row text-center">
+                                                 <div class="col-md-3">
+                                                     <h3 class="text-success">$2.8M</h3>
+                                                     <p class="mb-0"><strong>Total Savings</strong></p>
+                                                     <small class="text-muted">vs. Last Month</small>
+                                                 </div>
+                                                 <div class="col-md-3">
+                                                     <h3 class="text-warning">$1.2M</h3>
+                                                     <p class="mb-0"><strong>Vendor Optimization</strong></p>
+                                                     <small class="text-muted">Contract Negotiations</small>
+                                                 </div>
+                                                 <div class="col-md-3">
+                                                     <h3 class="text-info">$850K</h3>
+                                                     <p class="mb-0"><strong>Maintenance Savings</strong></p>
+                                                     <small class="text-muted">Predictive Maintenance</small>
+                                                 </div>
+                                                 <div class="col-md-3">
+                                                     <h3 class="text-primary">$750K</h3>
+                                                     <p class="mb-0"><strong>Rental vs Purchase</strong></p>
+                                                     <small class="text-muted">Strategic Decisions</small>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     </div>
+                                 </div>
+                             </div>
+
+                             <!-- Complex Scenarios -->
+                             <div class="row">
+                                 <div class="col-md-6">
+                                     <h5><i class="fas fa-brain me-2"></i>Complex Scenario Resolution</h5>
+                                     <div class="list-group">
+                                         <div class="list-group-item">
+                                             <div class="d-flex w-100 justify-content-between">
+                                                 <h6 class="mb-1">Emergency Equipment Shortage</h6>
+                                                 <small class="text-success">RESOLVED</small>
+                                             </div>
+                                             <p class="mb-1">ICU ventilator shortage during peak COVID - automatically sourced from 3 vendors in 2 hours</p>
+                                             <small class="text-muted">Savings: $125K in emergency rentals</small>
+                                         </div>
+                                         <div class="list-group-item">
+                                             <div class="d-flex w-100 justify-content-between">
+                                                 <h6 class="mb-1">Vendor Contract Expiry</h6>
+                                                 <small class="text-success">RESOLVED</small>
+                                             </div>
+                                             <p class="mb-1">15 vendor contracts expiring simultaneously - automated renewal with 12% cost reduction</p>
+                                             <small class="text-muted">Savings: $450K annually</small>
+                                         </div>
+                                         <div class="list-group-item">
+                                             <div class="d-flex w-100 justify-content-between">
+                                                 <h6 class="mb-1">Equipment Maintenance Crisis</h6>
+                                                 <small class="text-success">RESOLVED</small>
+                                             </div>
+                                             <p class="mb-1">Critical X-ray machine failure - predictive maintenance prevented 3-day downtime</p>
+                                             <small class="text-muted">Savings: $75K in lost revenue</small>
+                                         </div>
+                                         <div class="list-group-item">
+                                             <div class="d-flex w-100 justify-content-between">
+                                                 <h6 class="mb-1">Compliance Violation Risk</h6>
+                                                 <small class="text-success">RESOLVED</small>
+                                             </div>
+                                             <p class="mb-1">FDA audit approaching - automated compliance check identified 23 missing certifications</p>
+                                             <small class="text-muted">Prevented: $500K in fines</small>
+                                         </div>
+                                     </div>
+                                 </div>
+                                 <div class="col-md-6">
+                                     <h5><i class="fas fa-chart-line me-2"></i>Advanced Analytics</h5>
+                                     <div class="row">
+                                         <div class="col-6 mb-3">
+                                             <div class="card border-success">
+                                                 <div class="card-body text-center">
+                                                     <h4 class="text-success">{{ advanced_metrics.predictive_accuracy }}</h4>
+                                                     <small>Predictive Accuracy</small>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                         <div class="col-6 mb-3">
+                                             <div class="card border-warning">
+                                                 <div class="card-body text-center">
+                                                     <h4 class="text-warning">{{ advanced_metrics.compliance_score }}</h4>
+                                                     <small>Compliance Score</small>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                         <div class="col-6 mb-3">
+                                             <div class="card border-info">
+                                                 <div class="card-body text-center">
+                                                     <h4 class="text-info">{{ advanced_metrics.chaos_resolution_rate }}</h4>
+                                                     <small>Chaos Resolution Rate</small>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                         <div class="col-6 mb-3">
+                                             <div class="card border-primary">
+                                                 <div class="card-body text-center">
+                                                     <h4 class="text-primary">{{ advanced_metrics.total_security_incidents }}</h4>
+                                                     <small>Security Incidents</small>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     </div>
+                                     
+                                     <h6 class="mt-4"><i class="fas fa-shield-alt me-2"></i>Security & Compliance</h6>
+                                     <div class="alert alert-success">
+                                         <h6 class="alert-heading">100% Compliance Achieved!</h6>
+                                         <p class="mb-0">All 70,000 assets are fully compliant with FDA, HIPAA, and JCAHO regulations.</p>
+                                     </div>
+                                     
+                                     <h6 class="mt-4"><i class="fas fa-robot me-2"></i>AI-Powered Insights</h6>
+                                     <div class="list-group">
+                                         <div class="list-group-item">
+                                             <small class="text-muted">AI Recommendation:</small>
+                                             <p class="mb-1">"Consider purchasing 15 infusion pumps from Vendor A instead of renting - projected savings: $2.1M over 3 years"</p>
+                                         </div>
+                                         <div class="list-group-item">
+                                             <small class="text-muted">AI Alert:</small>
+                                             <p class="mb-1">"Vendor B showing 23% price increase trend - recommend contract renegotiation"</p>
+                                         </div>
+                                     </div>
+                                     
+                                     <!-- Lifecycle Alerts Section -->
+                                     <h6 class="mt-4"><i class="fas fa-exclamation-triangle me-2"></i>Lifecycle Alerts</h6>
+                                     <div class="alert alert-danger">
+                                         <div class="row align-items-center">
+                                             <div class="col-md-8">
+                                                 <h6 class="text-danger mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Critical Asset Replacement Needed</h6>
+                                                 <p class="mb-0"><strong>{{ lifecycle_alerts.critical_assets }} assets</strong> require immediate replacement (Critical: <20% life remaining)</p>
+                                                 <small class="text-muted">Estimated replacement cost: ${{ "{:,.0f}".format(lifecycle_alerts.total_replacement_cost / 1000000) }}M</small>
+                                             </div>
+                                             <div class="col-md-4 text-end">
+                                                 <button class="btn btn-danger btn-sm" onclick="viewLifecycleAlerts()">
+                                                     <i class="fas fa-eye me-2"></i>View Details
+                                                 </button>
+                                             </div>
+                                         </div>
+                                     </div>
+                                     
+                                     <!-- Lifecycle Alerts Chart -->
+                                     <div class="chart-container" style="position: relative; height: 200px;">
+                                         <canvas id="lifecycleAlertsChart"></canvas>
+                                     </div>
+                                     
+                                     <!-- Replacement Recommendations -->
+                                     <h6 class="mt-4"><i class="fas fa-shopping-cart me-2"></i>Replacement Recommendations</h6>
+                                     <div class="list-group">
+                                         {% for recommendation in lifecycle_alerts.replacement_recommendations %}
+                                         <div class="list-group-item">
+                                             <div class="d-flex w-100 justify-content-between">
+                                                 <h6 class="mb-1">{{ recommendation.category }}</h6>
+                                                 <span class="badge bg-{% if recommendation.priority == 'Critical' %}danger{% elif recommendation.priority == 'High' %}warning{% else %}info{% endif %}">
+                                                     {{ recommendation.priority }}
+                                                 </span>
+                                             </div>
+                                             <p class="mb-1">{{ recommendation.count }} units need replacement</p>
+                                             <small class="text-muted">Estimated cost: ${{ "{:,.0f}".format(recommendation.estimated_cost / 1000000) }}M - {{ recommendation.reason }}</small>
+                                         </div>
+                                         {% endfor %}
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vendor Details Modal -->
+<div class="modal fade" id="vendorDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Vendor Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="vendorDetailsContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contract Renegotiation Modal -->
+<div class="modal fade" id="contractModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Contract Renegotiation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="contractForm">
+                    <div class="mb-3">
+                        <label class="form-label">Vendor Name</label>
+                        <input type="text" class="form-control" id="contractVendorName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Current Monthly Cost</label>
+                        <input type="text" class="form-control" id="currentCost" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Proposed Monthly Cost</label>
+                        <input type="number" class="form-control" id="proposedCost" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Contract Duration (months)</label>
+                        <select class="form-select" id="contractDuration" required>
+                            <option value="">Select Duration</option>
+                            <option value="12">12 months</option>
+                            <option value="24">24 months</option>
+                            <option value="36">36 months</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="contractNotes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitContractRenegotiation()">
+                    <i class="fas fa-save me-2"></i>Submit Proposal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Return Asset Modal -->
+<div class="modal fade" id="returnAssetModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Return Asset</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="returnAssetForm">
+                    <div class="mb-3">
+                        <label class="form-label">Asset ID</label>
+                        <input type="text" class="form-control" id="returnAssetId" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Return Reason</label>
+                        <select class="form-select" id="returnReason" required>
+                            <option value="">Select Reason</option>
+                            <option value="contract_end">Contract End</option>
+                            <option value="no_longer_needed">No Longer Needed</option>
+                            <option value="maintenance_required">Maintenance Required</option>
+                            <option value="upgrade_replacement">Upgrade/Replacement</option>
+                            <option value="cost_optimization">Cost Optimization</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Return Date</label>
+                        <input type="date" class="form-control" id="returnDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="returnNotes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmReturn()">
+                    <i class="fas fa-undo me-2"></i>Confirm Return
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.workflow-step {
+    padding: 15px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.workflow-step:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.step-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    color: white;
+    font-size: 24px;
+}
+
+.workflow-step.active .step-icon {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+</style>
+
+<script>
+// Vendor performance data (from backend)
+const vendorPerformanceData = [
+    {% for vendor in vendor_performance %}
+    {
+        name: '{{ vendor.name }}',
+        asset_count: {{ vendor.asset_count }},
+        monthly_cost: {{ vendor.monthly_cost }},
+        contract_end: '{{ vendor.contract_end }}',
+        days_to_expiry: {{ vendor.days_to_expiry }},
+        utilization: {{ vendor.utilization }},
+        rating: {{ vendor.rating }},
+        specialization: '{{ vendor.specialization }}',
+        response_time: '{{ vendor.response_time }}'
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
+// Initialize charts
+document.addEventListener('DOMContentLoaded', function() {
+    // Department Rental Distribution Chart
+    const ctx = document.getElementById('departmentRentalChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: [
+                {% for dept, count in department_rental_distribution.items() %}
+                '{{ dept }}'{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ],
+            datasets: [{
+                data: [
+                    {% for dept, count in department_rental_distribution.items() %}
+                    {{ count }}{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    '#28a745', '#17a2b8', '#ffc107', '#dc3545', 
+                    '#6f42c1', '#fd7e14', '#20c997', '#e83e8c'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: {
+                            size: 10
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.parsed.toLocaleString()} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+
+// Workflow Functions
+function scanNewAsset() {
+    window.location.href = '/scan_asset';
+}
+
+function viewAssetDetails(assetId) {
+    window.location.href = `/asset/${assetId}`;
+}
+
+function initiateUsage(assetId) {
+    window.location.href = `/initiate_usage/${assetId}`;
+}
+
+function bulkScanAssets() {
+    alert('Bulk scan functionality would be implemented here');
+}
+
+function registerNewAsset() {
+                    window.location.href = '/register_asset';
+}
+
+function viewExpiringRentals() {
+    // Show expiring rentals in a modal or navigate to detailed view
+    alert('Expiring rentals detailed view');
+}
+
+function viewRentalDetails(rentalId) {
+    // Show rental details
+    alert(`Viewing rental details for ID: ${rentalId}`);
+}
+
+function extendRental(rentalId) {
+    // Extend rental contract
+    alert(`Extending rental contract for ID: ${rentalId}`);
+}
+
+function returnRental(rentalId) {
+    // Show return modal
+    document.getElementById('returnAssetId').value = rentalId;
+    document.getElementById('returnDate').value = new Date().toISOString().split('T')[0];
+    new bootstrap.Modal(document.getElementById('returnAssetModal')).show();
+}
+
+function confirmReturn() {
+    const assetId = document.getElementById('returnAssetId').value;
+    const reason = document.getElementById('returnReason').value;
+    const returnDate = document.getElementById('returnDate').value;
+    const notes = document.getElementById('returnNotes').value;
+
+    if (!reason || !returnDate) {
+        alert('Please fill in all required fields');
+        return;
+    }
+
+    // Submit return request
+    fetch(`/return_rental/${assetId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            reason: reason,
+            return_date: returnDate,
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Asset returned successfully!');
+            location.reload();
+        } else {
+            alert('Error returning asset: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error returning asset: ' + error);
+    });
+
+    bootstrap.Modal.getInstance(document.getElementById('returnAssetModal')).hide();
+}
+
+function completeAction(actionId) {
+    // Complete pending action
+    alert(`Completing action ID: ${actionId}`);
+}
+
+function viewVendorDetails(vendorName) {
+    // Find vendor data
+    const vendorData = vendorPerformanceData.find(v => v.name === vendorName);
+    if (!vendorData) {
+        alert('Vendor data not found');
+        return;
+    }
+    
+    // Populate vendor details modal
+    const content = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="fas fa-info-circle me-2"></i>Basic Information</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Vendor Name:</strong></td><td>${vendorData.name}</td></tr>
+                    <tr><td><strong>Total Assets:</strong></td><td>${vendorData.asset_count.toLocaleString()}</td></tr>
+                    <tr><td><strong>Monthly Cost:</strong></td><td>$${(vendorData.monthly_cost / 1000000).toFixed(1)}M</td></tr>
+                    <tr><td><strong>Contract End:</strong></td><td>${vendorData.contract_end}</td></tr>
+                    <tr><td><strong>Days to Expiry:</strong></td><td>${vendorData.days_to_expiry} days</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-chart-line me-2"></i>Performance Metrics</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Utilization Rate:</strong></td><td>${vendorData.utilization}%</td></tr>
+                    <tr><td><strong>Performance Rating:</strong></td><td>${vendorData.rating}/5</td></tr>
+                    <tr><td><strong>Specialization:</strong></td><td>${vendorData.specialization}</td></tr>
+                    <tr><td><strong>Response Time:</strong></td><td>${vendorData.response_time}</td></tr>
+                </table>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6><i class="fas fa-exclamation-triangle me-2"></i>Contract Status</h6>
+                ${vendorData.days_to_expiry <= 30 ? 
+                    `<div class="alert alert-warning">
+                        <strong>Contract Renewal Due!</strong> This contract expires in ${vendorData.days_to_expiry} days.
+                        <button class="btn btn-warning btn-sm ms-3" onclick="renewContract('${vendorData.name}')">
+                            <i class="fas fa-sync me-1"></i>Renew Contract
+                        </button>
+                    </div>` : 
+                    `<div class="alert alert-success">
+                        <strong>Contract Active</strong> - ${vendorData.days_to_expiry} days remaining
+                    </div>`
+                }
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('vendorDetailsContent').innerHTML = content;
+    new bootstrap.Modal(document.getElementById('vendorDetailsModal')).show();
+}
+
+function renegotiateContract(vendorName) {
+    // Find vendor data
+    const vendorData = vendorPerformanceData.find(v => v.name === vendorName);
+    if (!vendorData) {
+        alert('Vendor data not found');
+        return;
+    }
+    
+    // Populate contract modal
+    document.getElementById('contractVendorName').value = vendorData.name;
+    document.getElementById('currentCost').value = `$${(vendorData.monthly_cost / 1000000).toFixed(1)}M`;
+    document.getElementById('proposedCost').value = '';
+    document.getElementById('contractDuration').value = '';
+    document.getElementById('contractNotes').value = '';
+    
+    new bootstrap.Modal(document.getElementById('contractModal')).show();
+}
+
+function renewContract(vendorName) {
+    // Find vendor data
+    const vendorData = vendorPerformanceData.find(v => v.name === vendorName);
+    if (!vendorData) {
+        alert('Vendor data not found');
+        return;
+    }
+    
+    // Populate contract modal for renewal
+    document.getElementById('contractVendorName').value = vendorData.name;
+    document.getElementById('currentCost').value = `$${(vendorData.monthly_cost / 1000000).toFixed(1)}M`;
+    document.getElementById('proposedCost').value = Math.round(vendorData.monthly_cost * 0.95 / 1000000); // 5% reduction
+    document.getElementById('contractDuration').value = '24';
+    document.getElementById('contractNotes').value = 'Contract renewal - requesting 5% cost reduction based on performance.';
+    
+    new bootstrap.Modal(document.getElementById('contractModal')).show();
+}
+
+function viewChaosResolution() {
+    // Show chaos resolution details
+    alert('Viewing chaos resolution engine details');
+}
+
+function submitContractRenegotiation() {
+    const vendorName = document.getElementById('contractVendorName').value;
+    const proposedCost = document.getElementById('proposedCost').value;
+    const contractDuration = document.getElementById('contractDuration').value;
+    const notes = document.getElementById('contractNotes').value;
+    
+    if (!proposedCost || !contractDuration) {
+        alert('Please fill in all required fields');
+        return;
+    }
+    
+    // Submit contract renegotiation
+    alert(`Contract renegotiation submitted for ${vendorName}:
+    - Proposed Cost: $${proposedCost}M/month
+    - Duration: ${contractDuration} months
+    - Notes: ${notes}
+    
+    This will be reviewed by the procurement team.`);
+    
+    bootstrap.Modal.getInstance(document.getElementById('contractModal')).hide();
+}
+
+// Lifecycle Alerts Chart
+document.addEventListener('DOMContentLoaded', function() {
+    const lifecycleAlertsCtx = document.getElementById('lifecycleAlertsChart');
+    if (lifecycleAlertsCtx) {
+        new Chart(lifecycleAlertsCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Critical (<20%)', 'Warning (20-50%)', 'Attention (50-80%)', 'Healthy (>80%)'],
+                datasets: [{
+                    label: 'Assets',
+                    data: [
+                        {{ lifecycle_alerts.critical_assets }},
+                        {{ lifecycle_alerts.warning_assets }},
+                        {{ lifecycle_alerts.attention_assets }},
+                        {{ lifecycle_alerts.healthy_assets }}
+                    ],
+                    backgroundColor: [
+                        'rgba(220, 53, 69, 0.8)',   // Red for critical
+                        'rgba(255, 193, 7, 0.8)',   // Yellow for warning
+                        'rgba(23, 162, 184, 0.8)',  // Blue for attention
+                        'rgba(40, 167, 69, 0.8)'    // Green for healthy
+                    ],
+                    borderColor: [
+                        'rgba(220, 53, 69, 1)',
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(23, 162, 184, 1)',
+                        'rgba(40, 167, 69, 1)'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return `${context.label}: ${context.parsed.toLocaleString()} assets (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0,0,0,0.1)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString();
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+
+// Initialize Intelligent Insights Charts
+document.addEventListener('DOMContentLoaded', function() {
+    initializeIntelligentInsightsCharts();
+});
+
+function initializeIntelligentInsightsCharts() {
+    // Utilization Trends Chart
+    const utilizationCtx = document.getElementById('utilizationTrendsChart');
+    if (utilizationCtx) {
+        new Chart(utilizationCtx.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Rental Utilization',
+                    data: [73, 71, 68, 65, 62, 65],
+                    borderColor: 'rgba(23, 162, 184, 1)',
+                    backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Owned Utilization',
+                    data: [78, 79, 80, 81, 82, 78],
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Capacity vs Demand Chart
+    const capacityCtx = document.getElementById('capacityDemandChart');
+    if (capacityCtx) {
+        new Chart(capacityCtx.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Current Capacity',
+                    data: [70000, 70000, 70000, 70000, 70000, 70000, 70000, 70000, 70000, 70000, 70000, 70000],
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    tension: 0.1,
+                    fill: false
+                }, {
+                    label: 'Projected Demand',
+                    data: [65000, 66000, 67000, 68000, 69000, 70000, 71000, 72000, 71000, 70000, 69000, 68000],
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Optimal Capacity',
+                    data: [65200, 65200, 65200, 65200, 65200, 65200, 65200, 65200, 65200, 65200, 65200, 65200],
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.1,
+                    fill: false,
+                    borderDash: [5, 5]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+
+}
+
+function generateReturnRecommendations() {
+    const recommendations = `ASSET RETURN RECOMMENDATIONS
+Generated: ${new Date().toLocaleDateString()}
+
+OVERVIEW:
+- Total Assets to Return: 2,865
+- Monthly Savings: $8.6M
+- Annual Impact: $103.2M
+
+PRIORITY 1 - IMMEDIATE RETURN (1,250 assets):
+- Low utilization rentals (<40% usage)
+- Expiring contracts within 30 days
+- Duplicate equipment types
+- Estimated savings: $3.8M/month
+
+PRIORITY 2 - SHORT-TERM RETURN (1,615 assets):
+- Medium utilization rentals (40-60% usage)
+- Contracts expiring within 90 days
+- Seasonal equipment
+- Estimated savings: $4.8M/month
+
+DEPARTMENT BREAKDOWN:
+- ICU: 450 assets ($1.35M/month savings)
+- ER: 380 assets ($1.14M/month savings)
+- OR: 320 assets ($0.96M/month savings)
+- Radiology: 280 assets ($0.84M/month savings)
+- Other: 1,435 assets ($4.31M/month savings)
+
+ACTION PLAN:
+1. Review contracts for early termination clauses
+2. Negotiate return schedules with vendors
+3. Reallocate high-utilization assets
+4. Implement utilization monitoring
+5. Update procurement policies`;
+
+    // Create and download file
+    const blob = new Blob([recommendations], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'asset_return_recommendations.txt';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    alert('Asset return recommendations exported successfully!');
+}
+
+function generatePurchaseRecommendations() {
+    const recommendations = `PURCHASE CONVERSION ROI ANALYSIS
+Generated: ${new Date().toLocaleDateString()}
+
+OVERVIEW:
+- Assets to Convert: 3,820
+- Annual Savings: $11.5M
+- Payback Period: 18 months
+- ROI: 167%
+
+HIGH-PRIORITY CONVERSIONS (1,200 assets):
+- Utilization >80%
+- Long-term contracts (>12 months)
+- Standard equipment types
+- Annual savings: $3.6M
+
+MEDIUM-PRIORITY CONVERSIONS (1,620 assets):
+- Utilization 60-80%
+- Medium-term contracts (6-12 months)
+- Specialized equipment
+- Annual savings: $4.9M
+
+LOW-PRIORITY CONVERSIONS (1,000 assets):
+- Utilization 40-60%
+- Short-term contracts (<6 months)
+- Experimental equipment
+- Annual savings: $3.0M
+
+FINANCIAL ANALYSIS:
+- Total Purchase Cost: $68.8M
+- Annual Rental Cost: $80.3M
+- Annual Ownership Cost: $68.8M
+- Net Annual Savings: $11.5M
+- 5-Year NPV: $45.2M
+
+RISK ASSESSMENT:
+- Technology obsolescence: Low
+- Maintenance costs: Medium
+- Regulatory changes: Low
+- Market demand: High
+
+IMPLEMENTATION TIMELINE:
+- Phase 1 (Months 1-6): Convert 1,200 high-priority assets
+- Phase 2 (Months 7-12): Convert 1,620 medium-priority assets
+- Phase 3 (Months 13-18): Convert 1,000 low-priority assets`;
+
+    // Create and download file
+    const blob = new Blob([recommendations], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'purchase_conversion_analysis.txt';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    alert('Purchase conversion analysis exported successfully!');
+}
+
+function generateOptimizationPlan() {
+    const plan = `ASSET UTILIZATION OPTIMIZATION PLAN
+Generated: ${new Date().toLocaleDateString()}
+
+OVERVIEW:
+- Current Utilization: 65% (rental), 78% (owned)
+- Target Utilization: 80% (rental), 85% (owned)
+- Annual Savings: $5.8M
+
+STRATEGIC INITIATIVES:
+
+1. SMART SCHEDULING SYSTEM (Savings: $2.1M/year)
+- Implement AI-powered asset scheduling
+- Cross-departmental resource sharing
+- Predictive demand forecasting
+- Real-time availability tracking
+
+2. MAINTENANCE OPTIMIZATION (Savings: $1.8M/year)
+- Preventive maintenance scheduling
+- Predictive maintenance alerts
+- Vendor performance tracking
+- Equipment lifecycle management
+
+3. TRAINING & STANDARDIZATION (Savings: $1.2M/year)
+- Standardize equipment types
+- Cross-train staff on multiple devices
+- Reduce setup/teardown time
+- Improve operational efficiency
+
+4. VENDOR CONSOLIDATION (Savings: $0.7M/year)
+- Reduce vendor count from 15 to 8
+- Negotiate bulk pricing
+- Standardize contracts
+- Improve service levels
+
+IMPLEMENTATION TIMELINE:
+
+MONTHS 1-3: Foundation
+- Deploy scheduling system
+- Begin staff training
+- Establish baseline metrics
+
+MONTHS 4-6: Optimization
+- Implement maintenance improvements
+- Start vendor consolidation
+- Monitor utilization gains
+
+MONTHS 7-12: Scaling
+- Expand successful initiatives
+- Fine-tune algorithms
+- Achieve target utilization
+
+EXPECTED OUTCOMES:
+- 15% improvement in rental utilization
+- 7% improvement in owned utilization
+- 20% reduction in maintenance costs
+- 25% improvement in asset availability
+- $5.8M annual cost savings`;
+
+    // Create and download file
+    const blob = new Blob([plan], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'utilization_optimization_plan.txt';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    alert('Utilization optimization plan exported successfully!');
+}
+
+function viewLifecycleAlerts() {
+    // Show detailed lifecycle alerts
+    const criticalAssets = {{ lifecycle_alerts.critical_assets }};
+    const totalCost = {{ lifecycle_alerts.total_replacement_cost }};
+    
+    alert(`Lifecycle Alerts Summary:
+    
+    🚨 Critical Assets: ${criticalAssets.toLocaleString()} units
+    ⚠️ Warning Assets: {{ lifecycle_alerts.warning_assets }} units
+    📊 Attention Assets: {{ lifecycle_alerts.attention_assets }} units
+    ✅ Healthy Assets: {{ lifecycle_alerts.healthy_assets }} units
+    
+    💰 Total Replacement Cost: $${(totalCost / 1000000).toFixed(1)}M
+    
+    Action Required: Immediate replacement planning for critical assets to ensure patient safety and regulatory compliance.`);
+}
+
+function viewDetailedComparison() {
+    // Show detailed comparison modal
+    const modal = new bootstrap.Modal(document.getElementById('detailedComparisonModal'));
+    modal.show();
+    
+    // Initialize charts after modal is fully shown
+    document.getElementById('detailedComparisonModal').addEventListener('shown.bs.modal', function () {
+        initializeComparisonCharts();
+    }, { once: true });
+}
+
+function initializeComparisonCharts() {
+    // Clear any existing charts
+    if (window.portfolioChart) {
+        window.portfolioChart.destroy();
+    }
+    if (window.costChart) {
+        window.costChart.destroy();
+    }
+    
+    // Portfolio Chart
+    const portfolioCtx = document.getElementById('portfolioChart');
+    if (portfolioCtx) {
+        window.portfolioChart = new Chart(portfolioCtx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Rental Assets', 'Owned Assets'],
+                datasets: [{
+                    data: [{{ asset_stats.rental_assets }}, {{ asset_stats.owned_assets }}],
+                    backgroundColor: [
+                        'rgba(23, 162, 184, 0.8)',
+                        'rgba(40, 167, 69, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(23, 162, 184, 1)',
+                        'rgba(40, 167, 69, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return `${context.label}: ${context.parsed.toLocaleString()} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Cost Chart
+    const costCtx = document.getElementById('costChart');
+    if (costCtx) {
+        window.costChart = new Chart(costCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Rental Cost', 'Owned Cost'],
+                datasets: [{
+                    label: 'Monthly Cost ($M)',
+                    data: [{{ asset_stats.rental_monthly_cost / 1000000 }}, {{ (asset_stats.total_asset_value * 0.02) / 1000000 }}],
+                    backgroundColor: [
+                        'rgba(255, 193, 7, 0.8)',
+                        'rgba(40, 167, 69, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(40, 167, 69, 1)'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: $${context.parsed.toFixed(1)}M`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0,0,0,0.1)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toFixed(1) + 'M';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function generateOptimizationReport() {
+    // Show optimization modal
+    new bootstrap.Modal(document.getElementById('optimizationModal')).show();
+}
+
+function exportOptimizationReport() {
+    // Export optimization report
+    const rentalAssets = {{ asset_stats.rental_assets }};
+    const ownedAssets = {{ asset_stats.owned_assets }};
+    const rentalCost = {{ asset_stats.rental_monthly_cost }};
+    const ownedCost = {{ asset_stats.total_asset_value * 0.02 }};
+    
+    let reportContent = `Asset Portfolio Optimization Report
+Generated: ${new Date().toLocaleDateString()}
+
+CURRENT STATE ANALYSIS:
+- Total Assets: ${(rentalAssets + ownedAssets).toLocaleString()} units
+- Monthly Cost: $${((rentalCost + ownedCost) / 1000000).toFixed(1)}M
+- Rental Share: ${((rentalAssets / (rentalAssets + ownedAssets)) * 100).toFixed(1)}%
+- Owned Share: ${((ownedAssets / (rentalAssets + ownedAssets)) * 100).toFixed(1)}%
+
+OPTIMIZATION OPPORTUNITIES:
+1. Rental to Purchase Conversion: $${((rentalCost * 0.2 * 12) / 1000000).toFixed(1)}M annual savings
+2. Utilization Improvement: $${((rentalCost * 0.15 * 12) / 1000000).toFixed(1)}M annual impact
+3. Owned Asset Optimization: $${((ownedCost * 0.07 * 12) / 1000000).toFixed(1)}M annual savings
+
+TOTAL ANNUAL SAVINGS: $${(((rentalCost * 0.2 * 12) + (rentalCost * 0.15 * 12) + (ownedCost * 0.07 * 12)) / 1000000).toFixed(1)}M
+ROI: 250%
+Payback Period: 8 months`;
+
+    // Create and download file
+    const blob = new Blob([reportContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'asset_optimization_report.txt';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    alert('Optimization report exported successfully!');
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Initiate Session - Asset Tracking{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-play-circle me-2"></i>Start Asset Usage</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('scan_asset') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Back to Scan
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Asset Information -->
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Asset Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Asset Information</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Name:</strong></td>
+                                <td>{{ asset.name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Asset ID:</strong></td>
+                                <td><code>{{ asset.asset_id }}</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Category:</strong></td>
+                                <td>{{ asset.category.replace('_', ' ').title() }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    {% if asset.status == 'available' %}
+                                        <span class="badge bg-success">Available</span>
+                                    {% elif asset.status == 'in-use' %}
+                                        <span class="badge bg-warning">In Use</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{{ asset.status.title() }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ownership:</strong></td>
+                                <td>
+                                    {% if asset.ownership == 'rental' %}
+                                        <span class="badge bg-info">Rental</span>
+                                        {% if asset.vendor %}
+                                            <br><small class="text-muted">Vendor: {{ asset.vendor }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-primary">Hospital Owned</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>QR Code</h6>
+                        {% if asset.qr_code %}
+                            <img src="{{ asset.qr_code }}" alt="QR Code" class="img-fluid" style="max-width: 150px;">
+                        {% else %}
+                            <div class="text-muted">No QR code available</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RFID Automatic Tracking -->
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-wifi me-2"></i>RFID Automatic Usage Tracking</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>How RFID Tracking Works</h6>
+                    <p class="mb-0">This asset will be automatically tracked when it moves between RFID readers. No manual usage management required.</p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-map-marker-alt me-2"></i>Current Location</h6>
+                        <p><strong>{{ asset.location }}</strong></p>
+                        
+                        <h6><i class="fas fa-clock me-2"></i>Last Movement</h6>
+                        <p>
+                            {% if asset.last_usage %}
+                                {{ asset.last_usage.strftime('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                                Never moved
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-wifi me-2"></i>RFID Status</h6>
+                        <span class="badge bg-success">🟢 Tracked</span>
+                        
+                        <h6><i class="fas fa-route me-2"></i>Next Movement</h6>
+                        <p class="text-muted">Will be detected automatically when asset moves</p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Demo Mode:</strong> In a real hospital, sessions are created automatically when RFID readers detect asset movement.
+                    </div>
+                    
+                            <a href="{{ url_for('asset_management_dashboard') }}" class="btn btn-primary">
+            <i class="fas fa-cubes me-2"></i>View Assets
+        </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Atlas of Assets Information -->
+    <div class="col-lg-4">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-brain me-2"></i>Atlas of Assets</h5>
+            </div>
+            <div class="card-body">
+                {% if atlas_info %}
+                    <h6><i class="fas fa-clipboard-list me-2"></i>Standard Operating Procedures</h6>
+                    <div class="alert alert-info">
+                        <small>{{ atlas_info.sop }}</small>
+                    </div>
+                    
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Safety Information</h6>
+                    <ul class="list-unstyled">
+                        {% if atlas_info.training_required %}
+                            <li><i class="fas fa-graduation-cap text-warning me-2"></i>Training required</li>
+                        {% endif %}
+                        {% if atlas_info.critical_device %}
+                            <li><i class="fas fa-exclamation-circle text-danger me-2"></i>Critical device</li>
+                        {% endif %}
+                        <li><i class="fas fa-clock text-info me-2"></i>Max continuous use: {{ atlas_info.max_continuous_use }} hours</li>
+                        <li><i class="fas fa-tools text-secondary me-2"></i>Maintenance interval: {{ atlas_info.maintenance_interval }} days</li>
+                    </ul>
+                    
+                    {% if atlas_info.training_required %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-graduation-cap me-2"></i>
+                            <strong>Training Required:</strong> This device requires specialized training. 
+                            Please ensure you are certified to operate this equipment.
+                        </div>
+                    {% endif %}
+                    
+                    {% if atlas_info.critical_device %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Critical Device:</strong> This is a life-critical device. 
+                            Follow all safety protocols and monitor continuously.
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-question-circle fa-2x mb-2"></i>
+                        <p>No specific guidelines available for this asset category.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Reference -->
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-book me-2"></i>Quick Reference</h5>
+            </div>
+            <div class="card-body">
+                <h6>Session Guidelines</h6>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success me-2"></i>Verify patient compatibility</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Check device calibration</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Monitor throughout use</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Document any issues</li>
+                </ul>
+                
+                <hr>
+                
+                <h6>Emergency Contacts</h6>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-phone text-danger me-2"></i>Biomed: Ext. 1234</li>
+                    <li><i class="fas fa-phone text-danger me-2"></i>Supervisor: Ext. 5678</li>
+                    <li><i class="fas fa-phone text-danger me-2"></i>Emergency: 911</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

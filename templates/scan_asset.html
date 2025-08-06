@@ -1,0 +1,956 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Asset - Asset Tracking{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-qrcode me-2"></i>Asset Scanner</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+                        <a href="{{ url_for('asset_management_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Back to Assets
+        </a>
+    </div>
+</div>
+
+<!-- QR Code Scanner Interface -->
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-qrcode me-2"></i>QR Code Scanner
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-qrcode fa-6x text-primary mb-3"></i>
+                    <h4>Scan Asset QR Code</h4>
+                    <p class="text-muted">Point your scanner at the asset QR code to get instant information</p>
+                </div>
+                
+                <div class="mb-4">
+                    <button type="button" class="btn btn-primary btn-lg scan-qr-btn" onclick="startQRScan()">
+                        <i class="fas fa-qrcode me-2"></i>Scan QR Code
+                    </button>
+                </div>
+                
+                <!-- QR Code Input Modal -->
+                <div class="modal fade" id="qrInputModal" tabindex="-1" aria-labelledby="qrInputModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="qrInputModalLabel">
+                                    <i class="fas fa-qrcode me-2"></i>Scan QR Code
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Instructions:</strong> Point your scanner at the asset QR code, then the scanned value will appear in the field below.
+                                </div>
+                                <div class="mb-3">
+                                    <label for="qrCodeInput" class="form-label">Scanned QR Code</label>
+                                    <input type="text" class="form-control form-control-lg" id="qrCodeInput" 
+                                           placeholder="QR code will appear here when scanned..." autofocus>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" onclick="scanQRCode()">
+                                    <i class="fas fa-search me-1"></i>Get Asset Info
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Asset Information Modal -->
+<div class="modal fade" id="assetModal" tabindex="-1" aria-labelledby="assetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="assetModalLabel">
+                    <i class="fas fa-info-circle me-2"></i>Asset Information
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="assetModalBody">
+                <!-- Asset information will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <div class="d-flex gap-2 w-100">
+                    <button type="button" class="btn btn-secondary flex-fill" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary flex-fill" onclick="askQuestion('maintenance')">
+                        <i class="fas fa-tools me-1"></i>Maintenance
+                    </button>
+                    <button type="button" class="btn btn-info flex-fill" onclick="askQuestion('training')">
+                        <i class="fas fa-graduation-cap me-1"></i>Training
+                </button>
+                    <button type="button" class="btn btn-success flex-fill" onclick="openChatInterface()">
+                        <i class="fas fa-comments me-1"></i>Ask
+                </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Answer Modal for Quick Questions -->
+<div class="modal fade" id="answerModal" tabindex="-1" aria-labelledby="answerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="answerModalLabel">
+                    <i class="fas fa-info-circle me-2"></i>Device Information
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="answerModalBody">
+                    <!-- Answer content will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chat Interface Modal -->
+<div class="modal fade" id="chatModal" tabindex="-1" aria-labelledby="chatModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="chatModalLabel">
+                    <i class="fas fa-comments me-2"></i>Ask Questions About Device
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="chatMessages" class="mb-3" style="height: 300px; overflow-y: auto; border: 1px solid #dee2e6; padding: 15px; border-radius: 5px;">
+                    <div class="text-muted text-center">
+                        <i class="fas fa-robot fa-2x mb-2"></i>
+                        <p>Ask me anything about this device! I can help with maintenance, training, safety, and more.</p>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="chatInput" placeholder="Type your question here..." onkeypress="handleChatKeyPress(event)">
+                    <button class="btn btn-primary" type="button" onclick="sendChatMessage()">
+                        <i class="fas fa-paper-plane"></i> Send
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Layout stability fixes - prevent continuous reflow/repaint */
+html, body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    /* Prevent layout shifts */
+    height: 100%;
+    width: 100%;
+    position: relative;
+}
+
+/* Container stability */
+.container-fluid, .row, .col-lg-8 {
+    /* Prevent layout shifts */
+    min-height: 0;
+    min-width: 0;
+    position: relative;
+}
+
+/* Card stability */
+.card {
+    /* Prevent card size changes */
+    min-height: 400px;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-body {
+    /* Stable padding and dimensions */
+    padding: 1.5rem;
+    min-height: 300px;
+    position: relative;
+}
+
+/* Button container stability */
+.mb-4 {
+    /* Prevent height changes */
+    min-height: 60px;
+    position: relative;
+}
+
+/* Scan button stability */
+.scan-qr-btn {
+    /* Fixed dimensions to prevent layout shifts */
+    width: 200px;
+    height: 60px;
+    min-width: 200px;
+    min-height: 60px;
+    max-width: 200px;
+    max-height: 60px;
+    
+    /* Disable all animations and transforms */
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+    will-change: auto !important;
+    
+    /* Prevent GPU compositing issues */
+    backface-visibility: hidden !important;
+    perspective: none !important;
+    transform-style: flat !important;
+    
+    /* Stable visual properties */
+    box-shadow: 0 2px 5px rgba(16, 25, 78, 0.3) !important;
+    background: linear-gradient(135deg, #10194e 0%, #1a2a6b 100%) !important;
+    border: none !important;
+    outline: none !important;
+    
+    /* Prevent any size changes */
+    position: relative;
+    overflow: hidden;
+}
+
+.scan-qr-btn:hover,
+.scan-qr-btn:active,
+.scan-qr-btn:focus {
+    /* Maintain exact same properties on all states */
+    width: 200px !important;
+    height: 60px !important;
+    min-width: 200px !important;
+    min-height: 60px !important;
+    max-width: 200px !important;
+    max-height: 60px !important;
+    
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+    will-change: auto !important;
+    backface-visibility: hidden !important;
+    perspective: none !important;
+    transform-style: flat !important;
+    box-shadow: 0 2px 5px rgba(16, 25, 78, 0.3) !important;
+    background: linear-gradient(135deg, #10194e 0%, #1a2a6b 100%) !important;
+    border: none !important;
+    outline: none !important;
+}
+
+/* Demo buttons stability */
+.btn-outline-primary {
+    /* Fixed dimensions */
+    height: 50px;
+    min-height: 50px;
+    max-height: 50px;
+    
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+    will-change: auto !important;
+    backface-visibility: hidden !important;
+    
+    /* Prevent layout shifts */
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:active,
+.btn-outline-primary:focus {
+    height: 50px !important;
+    min-height: 50px !important;
+    max-height: 50px !important;
+    
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+    will-change: auto !important;
+    backface-visibility: hidden !important;
+}
+
+/* Modal stability */
+.modal-dialog {
+    margin: 1.75rem auto;
+    max-width: 500px;
+    /* Prevent modal size changes */
+    min-width: 500px;
+    position: relative;
+}
+
+.modal-content {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    /* Prevent content size changes */
+    min-height: 300px;
+    position: relative;
+}
+
+.modal-header {
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem 1.5rem;
+    /* Fixed height */
+    height: 70px;
+    min-height: 70px;
+    max-height: 70px;
+}
+
+.modal-body {
+    padding: 1.5rem;
+    /* Stable dimensions */
+    min-height: 200px;
+    position: relative;
+}
+
+.modal-footer {
+    border-top: 1px solid #dee2e6;
+    padding: 1rem 1.5rem;
+    /* Fixed height */
+    height: 80px;
+    min-height: 80px;
+    max-height: 80px;
+}
+
+/* Input field stability */
+.form-control {
+    /* Fixed height to prevent layout shifts */
+    height: 50px;
+    min-height: 50px;
+    max-height: 50px;
+    position: relative;
+}
+
+.form-control:focus {
+    border-color: #10194e;
+    box-shadow: 0 0 0 0.2rem rgba(16, 25, 78, 0.25);
+    /* Maintain same height */
+    height: 50px !important;
+    min-height: 50px !important;
+    max-height: 50px !important;
+}
+
+/* Alert stability */
+.alert {
+    /* Prevent alert size changes */
+    min-height: 60px;
+    position: relative;
+}
+
+/* Disable all button animations globally */
+.btn {
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+    will-change: auto !important;
+    /* Prevent any size changes */
+    position: relative;
+    overflow: hidden;
+}
+
+.btn:hover,
+.btn:active,
+.btn:focus {
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+    will-change: auto !important;
+}
+
+/* Prevent any element from changing size */
+* {
+    /* Prevent layout shifts */
+    box-sizing: border-box;
+}
+
+/* Force stable layout */
+.container-fluid, .row, .col, .col-md-4, .col-lg-8 {
+    /* Prevent flexbox layout shifts */
+    flex-shrink: 0;
+    flex-grow: 0;
+}
+
+/* Aggressive override of base template animations */
+.sidebar .nav-link,
+.card,
+.btn-primary,
+.btn-outline-primary,
+.asset-row,
+.nav-tabs .nav-link,
+.form-control,
+.form-select,
+.alert,
+.modal,
+.modal-dialog,
+.modal-content,
+.modal-header,
+.modal-body,
+.modal-footer,
+.btn,
+.btn:hover,
+.btn:active,
+.btn:focus,
+.btn-primary:hover,
+.btn-outline-primary:hover,
+.card:hover,
+.sidebar .nav-link:hover,
+.nav-tabs .nav-link:hover,
+.asset-row:hover {
+    /* Completely disable all animations and transitions */
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+    will-change: auto !important;
+    backface-visibility: hidden !important;
+    perspective: none !important;
+    transform-style: flat !important;
+}
+
+/* Disable Bootstrap modal animations */
+.modal.fade .modal-dialog {
+    transition: none !important;
+    transform: none !important;
+}
+
+.modal.show .modal-dialog {
+    transform: none !important;
+}
+
+/* Disable all hover effects from base template */
+.sidebar .nav-link:hover {
+    transform: none !important;
+    background: rgba(255,255,255,0.1) !important;
+}
+
+.card:hover {
+    transform: none !important;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(16, 25, 78, 0.15) !important;
+}
+
+.btn-primary:hover {
+    transform: none !important;
+    box-shadow: 0 2px 5px rgba(16, 25, 78, 0.3) !important;
+}
+
+.asset-row:hover {
+    transform: none !important;
+    background-color: rgba(16, 25, 78, 0.05) !important;
+    box-shadow: none !important;
+}
+</style>
+
+<script>
+// Asset database with QR codes - Real-world questions from nurses and biomeds
+const assetDatabase = {
+    '200000001192024000004099': {
+        name: 'Welch Allyn MicroPAQ',
+        category: 'Patient Monitor',
+        manufacturer: 'Welch Allyn',
+        location: 'ICU Zone A',
+        status: 'Available',
+        rental: 'No',
+        description: 'Handheld patient monitoring device for vital signs measurement',
+        image: 'fas fa-heartbeat',
+        specifications: 'Portable vital signs monitor with ECG, SpO2, and blood pressure capabilities. Battery life: 8 hours. Weight: 2.3 lbs. Display: 3.5" color LCD. Connectivity: WiFi, Bluetooth. Temperature range: 10-40°C.',
+        maintenance: 'Calibration required every 6 months. Last maintenance: 2024-01-15. Next due: 2024-07-15. Check ECG leads, SpO2 sensor, and BP cuff integrity. Replace batteries annually. Clean device daily with approved disinfectant.',
+        training: 'Basic training required for all nursing staff. Advanced training for ECG interpretation. Annual competency assessment. Technical training for calibration and troubleshooting. Contact Clinical Education for training schedule.',
+        safety: 'Always verify sensor placement. Check for visible damage before use. Never use on patients with pacemakers without physician approval. Ensure electrical safety testing completed. Check for frayed cables or loose connections.',
+        usage: 'Maximum continuous use: 4 hours. Clean sensors after each patient. Store in designated area. Check patient skin integrity under sensors. Monitor battery performance. Document usage patterns.',
+        troubleshooting: 'If readings are inaccurate, check sensor placement and battery level. Clean sensors with alcohol wipes. Contact Biomed for calibration issues. Check ECG lead resistance. Replace faulty sensors immediately.',
+        calibration: 'Calibration required every 6 months. Last calibration: 2024-01-15. Next due: 2024-07-15. Use manufacturer calibration kit. Document all calibration results. Do not attempt calibration without proper training.',
+        warranty: 'Warranty valid until 2025-12-31. Covers parts and labor. Extended warranty available. Contact Biomed for warranty claims. Keep all service records on file.'
+    },
+    '00000000000000000000000000000134': {
+        name: 'Masimo Radical-7',
+        category: 'Pulse Oximeter',
+        manufacturer: 'Masimo Corporation',
+        location: 'ER Trauma Bay',
+        status: 'In Use',
+        rental: 'Yes',
+        description: 'Advanced pulse oximeter with multiple parameter monitoring',
+        image: 'fas fa-pulse',
+        specifications: 'Multi-parameter patient monitor with SpO2, pulse rate, and advanced monitoring capabilities. Masimo SET technology. Displays: SpO2, pulse rate, perfusion index, pleth variability index. Alarm system with customizable limits.',
+        maintenance: 'Preventive maintenance every 90 days. Last maintenance: 2024-02-01. Next due: 2024-05-01. Check sensor cable integrity. Test alarm functionality. Clean sensor daily. Check for sensor damage.',
+        training: 'Specialized training required for advanced monitoring features. Basic training for standard SpO2 monitoring. Annual competency assessment. Technical training for advanced troubleshooting. Masimo certification recommended.',
+        safety: 'Ensure proper sensor placement. Monitor for signal quality indicators. Report any issues immediately. Check patient skin integrity. Verify electrical safety. Check for electromagnetic interference.',
+        usage: 'Continuous monitoring device. Check sensor placement every 4 hours. Clean sensors between patients. Monitor signal quality. Document sensor performance. Monitor for sensor degradation.',
+        troubleshooting: 'If signal quality is poor, check sensor placement and patient condition. Replace sensors if damaged. Clean sensor site. Check sensor cable connections. Test with known good sensor. Contact Masimo support if needed.',
+        calibration: 'Factory calibration only. No field calibration required. Contact manufacturer for service. Masimo sensors are pre-calibrated. Do not attempt calibration - use only Masimo-approved sensors.',
+        warranty: 'Warranty valid until 2026-06-30. Extended warranty available. Masimo sensors have 2-year warranty. Contact Biomed for warranty claims. Keep all service records on file.'
+    },
+    '200000001192024000004039': {
+        name: 'Sigma Spectrum',
+        category: 'Infusion Pump Controller',
+        manufacturer: 'B. Braun Medical',
+        location: 'ICU Zone B',
+        status: 'Available',
+        rental: 'No',
+        description: 'Advanced infusion pump system for precise medication delivery',
+        image: 'fas fa-cogs',
+        specifications: 'Multi-channel infusion pump with advanced safety features and drug library. Flow rate: 0.1-999 ml/hr. Pressure monitoring. Drug library with 1000+ medications. Wireless connectivity. Battery life: 8 hours.',
+        maintenance: 'Annual preventive maintenance required. Last maintenance: 2024-01-10. Next due: 2025-01-10. Check pressure sensors, flow accuracy, and alarm systems. Clean pump daily. Check for physical damage.',
+        training: 'Comprehensive training required for all users. Annual competency assessment mandatory. Drug library training essential. Technical training for calibration and troubleshooting. B. Braun certification required.',
+        safety: 'Critical safety device. Always verify drug library settings. Double-check programming before starting infusion. Check for air in line. Ensure electrical safety. Verify alarm functionality.',
+        usage: 'Maximum continuous use: 24 hours. Check pump status every 2 hours. Replace tubing as scheduled. Monitor for occlusions. Document pump performance. Monitor for mechanical issues.',
+        troubleshooting: 'If pump alarms, check tubing, occlusion, and programming. Clear air from line. Check battery level. Contact Biomed for mechanical issues. Check flow accuracy. Test alarm systems.',
+        calibration: 'Annual calibration required. Last calibration: 2024-01-10. Next due: 2025-01-10. Use B. Braun calibration kit. Document all results. Do not attempt calibration without proper training.',
+        warranty: 'Warranty valid until 2025-12-31. Service contract recommended for continuous support. Covers parts and labor. Contact Biomed for warranty claims. Keep all service records on file.'
+    }
+};
+
+// Cache modal instances to prevent re-creation
+let qrInputModal = null;
+let assetModal = null;
+let chatModal = null;
+let currentAssetName = null;
+
+function startQRScan() {
+    try {
+        // Get the modal element
+        const modalElement = document.getElementById('qrInputModal');
+        if (!modalElement) {
+            console.error('Modal element not found');
+            return;
+        }
+        
+        // Clear any existing input
+        const inputField = document.getElementById('qrCodeInput');
+        if (inputField) {
+            inputField.value = '';
+        }
+        
+        // Use cached modal instance or create new one
+        if (!qrInputModal) {
+            qrInputModal = new bootstrap.Modal(modalElement, {
+            backdrop: 'static',
+            keyboard: false
+        });
+        }
+        
+        // Show modal without re-creation
+        qrInputModal.show();
+        
+        // Focus on input field after modal is shown - no requestAnimationFrame
+        setTimeout(() => {
+            if (inputField) {
+                inputField.focus();
+            }
+        }, 100);
+    } catch (error) {
+        console.error('Error opening QR scan modal:', error);
+        alert('Error opening scanner. Please try again.');
+    }
+}
+
+function scanQRCode() {
+    try {
+        const inputField = document.getElementById('qrCodeInput');
+        if (!inputField) {
+            console.error('QR code input field not found');
+            return;
+        }
+        
+        const qrCode = inputField.value.trim();
+        
+        if (!qrCode) {
+            alert('Please scan a QR code or enter the QR code value.');
+            return;
+        }
+        
+        const asset = assetDatabase[qrCode];
+        if (asset) {
+            // Close the input modal safely using cached instance
+            if (qrInputModal) {
+                qrInputModal.hide();
+            }
+            
+            // Clear the input
+            inputField.value = '';
+            
+            // Show asset information
+            showAssetInfo(asset);
+        } else {
+            alert('QR Code not found in database. Please check the code and try again.\n\nAvailable QR codes:\n• 200000001192024000004099 (Welch Allyn MicroPAQ)\n• 00000000000000000000000000000134 (Masimo Radical-7)\n• 200000001192024000004039 (Sigma Spectrum)');
+        }
+    } catch (error) {
+        console.error('Error scanning QR code:', error);
+        alert('Error processing QR code. Please try again.');
+    }
+}
+
+function simulateScan(qrCode) {
+    const asset = assetDatabase[qrCode];
+    if (asset) {
+        showAssetInfo(asset);
+    } else {
+        alert('QR Code not found in database. Please check the code and try again.');
+    }
+}
+
+function showAssetInfo(asset) {
+    // Direct DOM update without requestAnimationFrame
+    const modalBody = document.getElementById('assetModalBody');
+    modalBody.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="text-center mb-3">
+                    <i class="${asset.image} fa-4x text-primary"></i>
+                </div>
+                <h5 class="text-primary">${asset.name}</h5>
+                <p class="text-muted">${asset.description}</p>
+                
+                <div class="mb-3">
+                    <strong>Manufacturer:</strong> ${asset.manufacturer}
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Category:</strong> ${asset.category}
+                </div>
+                
+
+                
+                <div class="mb-3">
+                    <strong>Status:</strong> 
+                    <span class="badge ${asset.status === 'Available' ? 'bg-success' : 'bg-warning'}">${asset.status}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Rental Status:</strong> 
+                    <span class="badge ${asset.rental === 'Yes' ? 'bg-info' : 'bg-secondary'}">${asset.rental === 'Yes' ? 'Rental' : 'Owned'}</span>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Asset Found!</strong> QR code scanned successfully.
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Specifications:</strong>
+                    <p class="small text-muted">${asset.specifications}</p>
+                </div>
+                
+                <div class="mb-2">
+                    <strong>Quick Questions:</strong>
+                </div>
+                
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-primary btn-sm w-100" onclick="askQuestion('maintenance', '${asset.name}')">
+                            <i class="fas fa-tools me-1"></i>Maintenance
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-primary btn-sm w-100" onclick="askQuestion('training', '${asset.name}')">
+                            <i class="fas fa-graduation-cap me-1"></i>Training
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-primary btn-sm w-100" onclick="askQuestion('calibration', '${asset.name}')">
+                            <i class="fas fa-cogs me-1"></i>Calibration
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-primary btn-sm w-100" onclick="askQuestion('safety', '${asset.name}')">
+                            <i class="fas fa-exclamation-triangle me-1"></i>Safety
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-primary btn-sm w-100" onclick="askQuestion('troubleshooting', '${asset.name}')">
+                            <i class="fas fa-wrench me-1"></i>Troubleshooting
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-primary btn-sm w-100" onclick="askQuestion('usage', '${asset.name}')">
+                            <i class="fas fa-clock me-1"></i>Usage
+                    </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-primary btn-sm w-100" onclick="askQuestion('warranty', '${asset.name}')">
+                            <i class="fas fa-shield-alt me-1"></i>Warranty
+                    </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-primary btn-sm w-100" onclick="askQuestion('specifications', '${asset.name}')">
+                            <i class="fas fa-info-circle me-1"></i>Specs
+                    </button>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <button class="btn btn-primary" onclick="openChatInterface('${asset.name}')">
+                        <i class="fas fa-comments me-2"></i>Ask Questions
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Use cached modal instance or create new one
+    if (!assetModal) {
+        assetModal = new bootstrap.Modal(document.getElementById('assetModal'));
+    }
+    assetModal.show();
+}
+
+function askQuestion(questionType, assetName) {
+    const asset = Object.values(assetDatabase).find(a => a.name === assetName);
+    if (!asset) return;
+    
+    const answers = {
+        'maintenance': asset.maintenance,
+        'training': asset.training,
+        'safety': asset.safety,
+        'usage': asset.usage,
+        'specifications': asset.specifications,
+        'troubleshooting': asset.troubleshooting,
+        'calibration': asset.calibration,
+        'warranty': asset.warranty
+    };
+    
+    const questionLabels = {
+        'maintenance': 'Maintenance Schedule & Requirements',
+        'training': 'Training Requirements & Competency',
+        'safety': 'Safety Procedures & Protocols',
+        'usage': 'Usage Guidelines & Best Practices',
+        'specifications': 'Technical Specifications & Capabilities',
+        'troubleshooting': 'Troubleshooting & Common Issues',
+        'calibration': 'Calibration Requirements & Schedule',
+        'warranty': 'Warranty Status & Service Information'
+    };
+    
+    // Update modal title and content
+    document.getElementById('answerModalLabel').innerHTML = `<i class="fas fa-info-circle me-2"></i>${questionLabels[questionType]}`;
+    document.getElementById('answerModalBody').innerHTML = `
+        <div class="mb-3">
+        <h6 class="text-primary">${assetName}</h6>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <p class="mb-0">${answers[questionType]}</p>
+            </div>
+        </div>
+    `;
+    
+    // Show the professional modal
+    const answerModal = new bootstrap.Modal(document.getElementById('answerModal'));
+    answerModal.show();
+}
+
+function openChatInterface(assetName) {
+    currentAssetName = assetName;
+    
+    // Clear chat messages
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.innerHTML = `
+        <div class="text-muted text-center">
+            <i class="fas fa-robot fa-2x mb-2"></i>
+            <p>Ask me anything about the ${assetName}! I can help with maintenance, training, safety, and more.</p>
+        </div>
+    `;
+    
+    // Clear input
+    document.getElementById('chatInput').value = '';
+    
+    // Use cached modal instance or create new one
+    if (!chatModal) {
+        chatModal = new bootstrap.Modal(document.getElementById('chatModal'));
+    }
+    chatModal.show();
+    
+    // Focus on input
+    setTimeout(() => {
+        document.getElementById('chatInput').focus();
+    }, 100);
+}
+
+function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (!message || !currentAssetName) return;
+    
+    // Add user message
+    addChatMessage('user', message);
+    
+    // Get answer
+    const answer = getChatAnswer(message, currentAssetName);
+    
+    // Add bot response
+    addChatMessage('bot', answer);
+    
+    // Clear input
+    input.value = '';
+    input.focus();
+}
+
+function handleChatKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendChatMessage();
+    }
+}
+
+function addChatMessage(sender, message) {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `mb-3 ${sender === 'user' ? 'text-end' : 'text-start'}`;
+    
+    const bubbleClass = sender === 'user' ? 'bg-primary text-white' : 'bg-light';
+    const icon = sender === 'user' ? 'fas fa-user' : 'fas fa-robot';
+    
+    messageDiv.innerHTML = `
+        <div class="d-inline-block ${bubbleClass} p-2 rounded" style="max-width: 80%;">
+            <div class="d-flex align-items-center mb-1">
+                <i class="${icon} me-2"></i>
+                <small class="fw-bold">${sender === 'user' ? 'You' : 'Assistant'}</small>
+            </div>
+            <div>${message}</div>
+        </div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function getChatAnswer(question, assetName) {
+    const asset = Object.values(assetDatabase).find(a => a.name === assetName);
+    if (!asset) return "I'm sorry, I don't have information about that device.";
+    
+    const questionLower = question.toLowerCase();
+    
+    // Device-specific hardcoded questions and answers
+    if (assetName === 'Sigma Spectrum') {
+        // Nurses' questions for Sigma Spectrum
+        if (questionLower.includes('start') || questionLower.includes('stop') || questionLower.includes('run') || questionLower.includes('infusion')) {
+            return "Press Run/Stop to pause or stop the infusion. To start, confirm the programmed rate/dose, then press Run/Stop, followed by Run.";
+        }
+        else if (questionLower.includes('library') || questionLower.includes('not selected') || questionLower.includes('alert')) {
+            return "This means the drug library wasn't selected before programming. Stop the infusion, press Library, choose the correct medication, and reprogram to ensure safe limits.";
+        }
+        // Biomed questions for Sigma Spectrum
+        else if (questionLower.includes('calibration') || questionLower.includes('flow accuracy') || questionLower.includes('verify')) {
+            return "Use a certified infusion analyzer (like IDA-5 or FlowTrax). Run a rate test (e.g., 100 mL/hr for 1 hour) and compare actual vs. expected delivery. Adjust if deviation >±5%.";
+        }
+        else if (questionLower.includes('firmware') || questionLower.includes('logs') || questionLower.includes('update')) {
+            return "Connect via the service port using Sigma's configuration tool. Firmware updates are applied through USB or network, and logs can be exported in XML or CSV format.";
+        }
+    }
+    else if (assetName === 'Welch Allyn MicroPAQ') {
+        // Nurses' questions for Welch Allyn MicroPAQ
+        if (questionLower.includes('vitals') || questionLower.includes('transport') || questionLower.includes('check')) {
+            return "Turn on the device and verify SpO₂/ECG readings are stable. Ensure sensors are attached securely. Use the Select button to cycle through vital signs.";
+        }
+        else if (questionLower.includes('transmit') || questionLower.includes('wireless') || questionLower.includes('monitoring')) {
+            return "Look for the wireless icon on the display. If it's blinking or missing, it's not transmitting — inform Biomed to check connection.";
+        }
+        // Biomed questions for Welch Allyn MicroPAQ
+        else if (questionLower.includes('test') && (questionLower.includes('ecg') || questionLower.includes('spo2'))) {
+            return "Use a simulator (e.g., ProSim or equivalent) to inject test signals and validate that the waveform and vitals appear correctly.";
+        }
+        else if (questionLower.includes('battery') || questionLower.includes('replace')) {
+            return "Open the back panel, remove the existing battery pack, and replace with a new Welch Allyn certified pack. Reboot and check battery runtime calibration in service mode.";
+        }
+    }
+    else if (assetName === 'Masimo Radical-7') {
+        // Nurses' questions for Masimo Radical-7
+        if (questionLower.includes('low perfusion') || questionLower.includes('perfusion')) {
+            return "It indicates weak signal due to poor blood flow. Warm the patient's extremity, or reposition the sensor. Try an ear or forehead site if needed.";
+        }
+        else if (questionLower.includes('switch') || questionLower.includes('parameter') || questionLower.includes('spo2') || questionLower.includes('pi') || questionLower.includes('pvi')) {
+            return "Tap the screen or use the arrow keys to cycle through. Use the Menu button to change view modes if needed.";
+        }
+        // Biomed questions for Masimo Radical-7
+        else if (questionLower.includes('optical sensor') || questionLower.includes('sensor') && questionLower.includes('functional')) {
+            return "Connect a Masimo test sensor or simulator. Check the device receives values and waveform. Clean sensor port and ensure LED/photodiode operation.";
+        }
+        else if (questionLower.includes('firmware') || questionLower.includes('update') && questionLower.includes('radical')) {
+            return "Use the Masimo Service Tool on a USB stick or SD card. Insert into the port, follow on-screen prompts, and confirm software version after reboot.";
+        }
+    }
+    
+    // General questions that apply to all devices
+    if (questionLower.includes('maintenance') || questionLower.includes('maintain') || questionLower.includes('service')) {
+        return asset.maintenance;
+    }
+    else if (questionLower.includes('train') || questionLower.includes('learn') || questionLower.includes('education')) {
+        return asset.training;
+    }
+    else if (questionLower.includes('safety') || questionLower.includes('safe') || questionLower.includes('danger') || questionLower.includes('risk')) {
+        return asset.safety;
+    }
+    else if (questionLower.includes('use') || questionLower.includes('usage') || questionLower.includes('operate') || questionLower.includes('how to')) {
+        return asset.usage;
+    }
+    else if (questionLower.includes('troubleshoot') || questionLower.includes('problem') || questionLower.includes('issue') || questionLower.includes('error') || questionLower.includes('fix')) {
+        return asset.troubleshooting;
+    }
+    else if (questionLower.includes('calibrat') || questionLower.includes('calibration')) {
+        return asset.calibration;
+    }
+    else if (questionLower.includes('warranty') || questionLower.includes('warrant')) {
+        return asset.warranty;
+    }
+    else if (questionLower.includes('spec') || questionLower.includes('technical') || questionLower.includes('capability') || questionLower.includes('feature')) {
+        return asset.specifications;
+    }
+    else {
+        return "I can help you with device-specific questions! For " + assetName + ", try asking about:\n\n" +
+               (assetName === 'Sigma Spectrum' ? 
+                "• How do I start/stop an infusion?\n• What does 'Library Not Selected' mean?\n• How do I verify flow accuracy?\n• How do I update firmware?" :
+               assetName === 'Welch Allyn MicroPAQ' ? 
+                "• How do I check vitals during transport?\n• How do I know if it's transmitting?\n• How do I test ECG/SpO2?\n• How do I replace the battery?" :
+               assetName === 'Masimo Radical-7' ? 
+                "• What does 'Low Perfusion' mean?\n• How do I switch between parameters?\n• How do I verify the optical sensor?\n• How do I update firmware?" : 
+                "• Maintenance, training, safety, usage, troubleshooting, calibration, warranty, and technical specifications.");
+    }
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        // Add keyboard support for QR code input
+        const qrInput = document.getElementById('qrCodeInput');
+        if (qrInput) {
+            qrInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); // Prevent form submission
+                    scanQRCode();
+                }
+            });
+        }
+        
+        // Prevent modal backdrop issues
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            modal.addEventListener('hidden.bs.modal', function() {
+                // Clean up any potential issues
+                document.body.classList.remove('modal-open');
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+            });
+        });
+        
+    } catch (error) {
+        console.error('Error initializing QR scanner:', error);
+    }
+});
+</script>
+{% endblock %} 

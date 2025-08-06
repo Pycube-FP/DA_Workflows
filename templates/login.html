@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block auth_content %}
+<div class="container-fluid">
+    <div class="row min-vh-100">
+        <div class="col-md-6 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #10194e 0%, #1a2a6b 100%);">
+            <div class="text-center text-white">
+                <h1 class="display-4 mb-4"><i class="fas fa-hospital"></i></h1>
+                <h2 class="mb-4">Asset Tracking System</h2>
+                <p class="lead">Streamline your hospital's asset management with intelligent tracking and analytics</p>
+            </div>
+        </div>
+        <div class="col-md-6 d-flex align-items-center justify-content-center">
+            <div class="card shadow-lg" style="max-width: 400px;">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <h3 class="card-title">Sign In</h3>
+                        <p class="text-muted">Enter your credentials to access the system</p>
+                    </div>
+                    
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text" class="form-control" id="username" name="username" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                        </button>
+                    </form>
+                    
+                    <div class="text-center mt-4">
+                        <small class="text-muted">
+                            <strong>Demo Credentials:</strong><br>
+                            Username: admin<br>
+                            Password: admin123
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

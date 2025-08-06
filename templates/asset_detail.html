@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}{{ asset.name }} - Asset Tracking{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-cube me-2"></i>{{ asset.name }}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+                        <a href="{{ url_for('asset_management_dashboard') }}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left me-1"></i>Back to Assets
+        </a>
+        {% if asset.status == 'available' %}
+            <a href="{{ url_for('scan_asset') }}" class="btn btn-primary">
+                <i class="fas fa-play me-1"></i>Start Session
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Asset Information -->
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Asset Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Asset ID:</strong></td>
+                                <td><code>{{ asset.asset_id }}</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Name:</strong></td>
+                                <td>{{ asset.name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Category:</strong></td>
+                                <td>
+                                    <span class="badge bg-light text-dark">
+                                        {{ asset.category.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    {% if asset.status == 'available' %}
+                                        <span class="badge bg-success">Available</span>
+                                    {% elif asset.status == 'in-use' %}
+                                        <span class="badge bg-warning">In Use</span>
+                                    {% elif asset.status == 'maintenance' %}
+                                        <span class="badge bg-danger">Maintenance</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ asset.status.title() }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ownership:</strong></td>
+                                <td>
+                                    {% if asset.ownership == 'rental' %}
+                                        <span class="badge bg-info">Rental</span>
+                                        {% if asset.vendor %}
+                                            <br><small class="text-muted">Vendor: {{ asset.vendor }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-primary">Hospital Owned</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Location:</strong></td>
+                                <td>
+                                    <i class="fas fa-map-marker-alt text-muted me-1"></i>
+                                    {{ asset.location }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Last Usage:</strong></td>
+                                <td>
+                                    {% if asset.last_usage %}
+                                        {{ asset.last_usage.strftime('%Y-%m-%d %H:%M') }}
+                                    {% else %}
+                                        <span class="text-muted">Never used</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Created:</strong></td>
+                                <td>{{ asset.created_at.strftime('%Y-%m-%d') }}</td>
+                            </tr>
+                            {% if asset.expected_lifespan %}
+                            <tr>
+                                <td><strong>Expected Lifespan:</strong></td>
+                                <td>{{ asset.expected_lifespan }} months</td>
+                            </tr>
+                            {% endif %}
+                            {% if asset.rental_rate %}
+                            <tr>
+                                <td><strong>Rental Rate:</strong></td>
+                                <td>${{ "%.2f"|format(asset.rental_rate) }}/day</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+                
+                {% if asset.qr_code %}
+                <div class="text-center mt-3">
+                    <h6>QR Code</h6>
+                    <img src="{{ asset.qr_code }}" alt="QR Code" class="img-fluid" style="max-width: 200px;">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Usage History -->
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Usage History</h5>
+            </div>
+            <div class="card-body">
+                {% if usage_history %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>User</th>
+                                    <th>Department</th>
+                                    <th>Duration</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for usage in usage_history %}
+                                <tr>
+                                    <td>{{ usage.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>{{ usage.user.username }}</td>
+                                    <td>{{ usage.department }}</td>
+                                    <td>
+                                        {% if usage.end_time %}
+                                            {% set duration = (usage.end_time - usage.start_time).total_seconds() / 3600 %}
+                                            {{ "%.1f"|format(duration) }}h
+                                        {% else %}
+                                            <span class="text-warning">Active</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ usage.reason.replace('_', ' ').title() }}</td>
+                                    <td>
+                                        {% if usage.status == 'active' %}
+                                            <span class="badge bg-warning">Active</span>
+                                        {% elif usage.status == 'completed' %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ usage.status.title() }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No usage history available</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Atlas of Assets & Quick Actions -->
+    <div class="col-lg-4">
+        <!-- Atlas of Assets -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-brain me-2"></i>Atlas of Assets</h5>
+            </div>
+            <div class="card-body">
+                {% if atlas_info %}
+                    <h6><i class="fas fa-clipboard-list me-2"></i>Standard Operating Procedures</h6>
+                    <div class="alert alert-info">
+                        <small>{{ atlas_info.sop }}</small>
+                    </div>
+                    
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Device Specifications</h6>
+                    <ul class="list-unstyled">
+                        {% if atlas_info.training_required %}
+                            <li><i class="fas fa-graduation-cap text-warning me-2"></i>Training required</li>
+                        {% endif %}
+                        {% if atlas_info.critical_device %}
+                            <li><i class="fas fa-exclamation-circle text-danger me-2"></i>Critical device</li>
+                        {% endif %}
+                        <li><i class="fas fa-clock text-info me-2"></i>Max continuous use: {{ atlas_info.max_continuous_use }} hours</li>
+                        <li><i class="fas fa-tools text-secondary me-2"></i>Maintenance interval: {{ atlas_info.maintenance_interval }} days</li>
+                    </ul>
+                    
+                    {% if atlas_info.training_required %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-graduation-cap me-2"></i>
+                            <strong>Training Required:</strong> This device requires specialized training.
+                        </div>
+                    {% endif %}
+                    
+                    {% if atlas_info.critical_device %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Critical Device:</strong> This is a life-critical device.
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-question-circle fa-2x mb-2"></i>
+                        <p>No specific guidelines available for this asset category.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if asset.status == 'available' %}
+                        <a href="{{ url_for('scan_asset') }}" class="btn btn-success">
+                            <i class="fas fa-play me-2"></i>Start Session
+                        </a>
+                    {% else %}
+                        <button class="btn btn-secondary" disabled>
+                            <i class="fas fa-pause me-2"></i>Asset Not Available
+                        </button>
+                    {% endif %}
+                    
+                    <a href="#" class="btn btn-outline-primary">
+                        <i class="fas fa-print me-2"></i>Print QR Code
+                    </a>
+                    
+                    <a href="#" class="btn btn-outline-info">
+                        <i class="fas fa-file-alt me-2"></i>View Manual
+                    </a>
+                    
+                    <a href="#" class="btn btn-outline-warning">
+                        <i class="fas fa-tools me-2"></i>Request Maintenance
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Asset Statistics -->
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Asset Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                                            <h4 class="text-primary">{{ usage_history|length }}</h4>
+                    <small class="text-muted">Total Usage Records</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">
+                            {% if asset.last_usage %}
+                                {{ ((asset.last_usage - asset.created_at).days) }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        </h4>
+                        <small class="text-muted">Days in Service</small>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-info">
+                            {% if asset.ownership == 'rental' %}
+                                Rental
+                            {% else %}
+                                Owned
+                            {% endif %}
+                        </h4>
+                        <small class="text-muted">Ownership Type</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-warning">{{ asset.category.replace('_', ' ').title() }}</h4>
+                        <small class="text-muted">Category</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

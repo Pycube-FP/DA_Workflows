@@ -480,12 +480,21 @@
             
             const installButton = document.createElement('button');
             installButton.id = 'installAppButton';
-            installButton.textContent = 'Install App';
+            installButton.innerHTML = '<i class="fas fa-download"></i> Install App';
             installButton.className = 'btn btn-primary position-fixed';
-            installButton.style.cssText = 'top: 20px; right: 20px; z-index: 1000;';
+            installButton.style.cssText = 'top: 20px; right: 20px; z-index: 1000; padding: 10px 15px; font-size: 14px;';
             installButton.onclick = installApp;
             document.body.appendChild(installButton);
         }
+        
+        // Show install button after page loads (for manual installation)
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (!document.getElementById('installAppButton')) {
+                    showInstallButton();
+                }
+            }, 2000);
+        });
         
         function hideInstallButton() {
             const installButton = document.getElementById('installAppButton');

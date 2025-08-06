@@ -1297,6 +1297,10 @@ def manifest():
 def service_worker():
     return app.send_static_file('sw.js')
 
+@app.route('/static/style.css')
+def style_css():
+    return app.send_static_file('style.css')
+
 @app.route('/return_rental/<int:rental_id>', methods=['POST'])
 @login_required
 def return_rental(rental_id):

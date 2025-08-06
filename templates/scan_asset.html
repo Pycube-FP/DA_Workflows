@@ -6,7 +6,10 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2"><i class="fas fa-qrcode me-2"></i>Asset Scanner</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-                        <a href="{{ url_for('asset_management_dashboard') }}" class="btn btn-outline-secondary">
+        <button id="installAppButton" class="btn btn-success me-2" onclick="installApp()" style="display: none;">
+            <i class="fas fa-download me-1"></i>Install App
+        </button>
+        <a href="{{ url_for('asset_management_dashboard') }}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-1"></i>Back to Assets
         </a>
     </div>
@@ -920,6 +923,54 @@ function getChatAnswer(question, assetName) {
                 "• Maintenance, training, safety, usage, troubleshooting, calibration, warranty, and technical specifications.");
     }
 }
+
+// PWA Install Button Logic
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallButton();
+});
+
+function showInstallButton() {
+    const installButton = document.getElementById('installAppButton');
+    if (installButton) {
+        installButton.style.display = 'inline-block';
+    }
+}
+
+function installApp() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('User accepted the install prompt');
+                hideInstallButton();
+            } else {
+                console.log('User dismissed the install prompt');
+            }
+            deferredPrompt = null;
+        });
+    } else {
+        // Fallback for manual installation
+        alert('To install this app:\n\nChrome/Edge: Look for "Install" in the address bar\nSafari: Tap Share → "Add to Home Screen"\nFirefox: Tap menu → "Install App"');
+    }
+}
+
+function hideInstallButton() {
+    const installButton = document.getElementById('installAppButton');
+    if (installButton) {
+        installButton.style.display = 'none';
+    }
+}
+
+// Show install button after page loads
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        showInstallButton();
+    }, 2000);
+});
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {

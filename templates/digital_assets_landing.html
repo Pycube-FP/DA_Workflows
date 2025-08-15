@@ -1,0 +1,244 @@
+{% extends "base_no_sidebar.html" %}
+
+{% block title %}Digital Assets{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="text-center">
+                <h1 class="display-4 text-primary mb-3">Digital Assets</h1>
+                <p class="lead text-muted">What would you like to check for your asset today?</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Cards Section -->
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="row g-4">
+                <!-- Rental Asset Management Card -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 shadow-lg border-0" style="border-radius: 15px;">
+                        <div class="card-body d-flex flex-column p-4">
+                            <!-- Icon Section -->
+                            <div class="text-center mb-3">
+                                <div class="icon-container mb-3">
+                                    <img src="/static/icons/rental.png" alt="Rental Asset Management" width="80" height="80" class="icon-image">
+                                </div>
+                            </div>
+                            
+                            <!-- Title and Description -->
+                            <div class="text-center mb-3">
+                                <h5 class="card-title text-primary fw-bold mb-2">Rental Asset Management</h5>
+                                <p class="card-text text-muted small">Manage rental equipment registration, tracking, and returns</p>
+                            </div>
+                            
+                            <!-- Action Button -->
+                            <div class="mt-auto">
+                                <a href="{{ url_for('register_asset') }}" class="btn btn-primary w-100">
+                                    Select
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Atlas of Assets Card -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 shadow-lg border-0" style="border-radius: 15px;">
+                        <div class="card-body d-flex flex-column p-4">
+                            <!-- Icon Section -->
+                            <div class="text-center mb-3">
+                                <div class="icon-container mb-3">
+                                    <img src="/static/icons/atlas_of_assets.png" alt="Atlas of Assets" width="80" height="80" class="icon-image">
+                                </div>
+                            </div>
+                            
+                            <!-- Title and Description -->
+                            <div class="text-center mb-3">
+                                <h5 class="card-title text-primary fw-bold mb-2">Atlas of Assets</h5>
+                                <p class="card-text text-muted small">AI-powered knowledge base for asset information and procedures</p>
+                            </div>
+                            
+                            <!-- Action Button -->
+                            <div class="mt-auto">
+                                <a href="{{ url_for('scan_asset') }}" class="btn btn-primary w-100">
+                                    Select
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preventative Maintenance Card -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 shadow-lg border-0" style="border-radius: 15px;">
+                        <div class="card-body d-flex flex-column p-4">
+                            <!-- Icon Section -->
+                            <div class="text-center mb-3">
+                                <div class="icon-container mb-3">
+                                    <img src="/static/icons/pm.png" alt="Preventative Maintenance" width="80" height="80" class="icon-image">
+                                </div>
+                            </div>
+                            
+                            <!-- Title and Description -->
+                            <div class="text-center mb-3">
+                                <h5 class="card-title text-primary fw-bold mb-2">Preventative Maintenance</h5>
+                                <p class="card-text text-muted small">Description of preventive maintenance</p>
+                            </div>
+                            
+                            <!-- Action Button -->
+                            <div class="mt-auto">
+                                <button class="btn btn-primary w-100" onclick="showUnderProduction('Preventative Maintenance')">
+                                    Select
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loss Prevention Card -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 shadow-lg border-0" style="border-radius: 15px;">
+                        <div class="card-body d-flex flex-column p-4">
+                            <!-- Icon Section -->
+                            <div class="text-center mb-3">
+                                <div class="icon-container mb-3">
+                                    <img src="/static/icons/loss_prevention.png" alt="Loss Prevention" width="80" height="80" class="icon-image">
+                                </div>
+                            </div>
+                            
+                            <!-- Title and Description -->
+                            <div class="text-center mb-3">
+                                <h5 class="card-title text-primary fw-bold mb-2">Loss Prevention</h5>
+                                <p class="card-text text-muted small">Description of preventive maintenance</p>
+                            </div>
+                            
+                            <!-- Action Button -->
+                            <div class="mt-auto">
+                                <button class="btn btn-primary w-100" onclick="showUnderProduction('Loss Prevention')">
+                                    Select
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Decorative Background Element -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="decorative-background">
+                <svg width="100%" height="100" viewBox="0 0 1200 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0 50 Q300 20 600 50 Q900 80 1200 50" stroke="#4a90e2" stroke-width="2" fill="none" opacity="0.3"/>
+                    <path d="M0 60 Q300 30 600 60 Q900 90 1200 60" stroke="#6ba3e8" stroke-width="1" fill="none" opacity="0.2"/>
+                    <path d="M0 40 Q300 10 600 40 Q900 70 1200 40" stroke="#2d5aa0" stroke-width="1" fill="none" opacity="0.2"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Under Production Modal -->
+<div class="modal fade" id="underProductionModal" tabindex="-1" aria-labelledby="underProductionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="underProductionModalLabel">
+                    <i class="fas fa-tools me-2"></i>Under Production
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-cogs fa-4x text-warning mb-3"></i>
+                    <h4 class="text-warning" id="featureName"></h4>
+                </div>
+                <p class="lead">This feature is currently under development and will be available soon.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showUnderProduction(featureName) {
+    document.getElementById('featureName').textContent = featureName;
+    const modal = new bootstrap.Modal(document.getElementById('underProductionModal'));
+    modal.show();
+}
+</script>
+
+<style>
+.card {
+    transition: all 0.3s ease;
+    border: 2px solid #e9ecef;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(16, 25, 78, 0.2) !important;
+    border-color: #10194e;
+}
+
+.icon-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80px;
+}
+
+.icon-image {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #10194e 0%, #1a2a6b 100%);
+    border: none;
+    padding: 12px 24px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0a0f2e 0%, #10194e 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(16, 25, 78, 0.3);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    border: none;
+    padding: 12px 24px;
+    font-weight: 600;
+    opacity: 0.6;
+}
+
+.decorative-background {
+    position: relative;
+    z-index: -1;
+}
+
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    .lead {
+        font-size: 1rem;
+    }
+}
+</style>
+{% endblock %}

@@ -211,7 +211,7 @@ def check_asset_alerts(asset):
 @app.route('/')
 def index():
     if current_user.is_authenticated:
-        return redirect(url_for('asset_management_dashboard'))
+        return redirect(url_for('digital_assets_landing'))
     return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -223,11 +223,17 @@ def login():
         
         if user and check_password_hash(user.password_hash, password):
             login_user(user)
-            return redirect(url_for('asset_management_dashboard'))
+            return redirect(url_for('digital_assets_landing'))
         else:
             flash('Invalid username or password')
     
     return render_template('login.html')
+
+@app.route('/digital_assets_landing')
+@login_required
+def digital_assets_landing():
+    """Digital Assets Landing Page - Main entry point after login"""
+    return render_template('digital_assets_landing.html')
 
 @app.route('/logout')
 @login_required
